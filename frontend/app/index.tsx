@@ -14,12 +14,33 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
+import { io, Socket } from 'socket.io-client';
+import Constants from 'expo-constants';
 
 export default function HomeScreen() {
   const [username, setUsername] = useState('');
   const [roomCode, setRoomCode] = useState('');
-  const [mode, setMode] = useState<'menu' | 'create' | 'join'>('menu');
+  const [mode, setMode] = useState<'menu' | 'create' | 'join' | 'nearby'>('menu');
+  const [searchingNearby, setSearchingNearby] = useState(false);
+  const [location, setLocation] = useState<{lat: number; lng: number} | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
   const router = useRouter();
+
+  const backendUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:8001';
+
+  useEffect(() => {
+    // Request location permission on mount
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        const loc = await Location.getCurrentPositionAsync({});
+        setLocation({
+          lat: loc.coords.latitude,
+          lng: loc.coords.longitude
+        });
+      }
+    })();
+  }, []);
 
   const generateRoomCode = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -32,7 +53,7 @@ export default function HomeScreen() {
 
   const handleCreateRoom = () => {
     if (!username.trim()) {
-      alert('Please enter a username');
+      Alert.alert('Error', 'Please enter a username');
       return;
     }
     const code = generateRoomCode();
@@ -44,11 +65,11 @@ export default function HomeScreen() {
 
   const handleJoinRoom = () => {
     if (!username.trim()) {
-      alert('Please enter a username');
+      Alert.alert('Error', 'Please enter a username');
       return;
     }
     if (!roomCode.trim()) {
-      alert('Please enter a room code');
+      Alert.alert('Error', 'Please enter a room code');
       return;
     }
     router.push({
@@ -56,6 +77,130 @@ export default function HomeScreen() {
       params: { username, roomCode: roomCode.toUpperCase(), isHost: 'false' },
     });
   };
+
+  const handleFindNearby = async () => {
+    if (!username.trim()) {
+      Alert.alert('Error', 'Please enter a username');
+      return;
+    }
+
+    // Check location permission
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(
+        'Location Required',
+        'Please enable location access to find nearby players',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    setSearchingNearby(true);
+
+    // Get current location
+    const loc = await Location.getCurrentPositionAsync({});
+    const userLocation = {
+      lat: loc.coords.latitude,
+      lng: loc.coords.longitude
+    };
+    setLocation(userLocation);
+
+    // Connect to Socket.IO
+    const socketUrl = backendUrl.replace('/api', '');
+    const newSocket = io(socketUrl, {
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+    });
+
+    newSocket.on('connect', () => {
+      console.log('Connected to server for nearby search');
+      
+      // Send location and search for nearby players
+      newSocket.emit('find_nearby_match', {
+        lat: userLocation.lat,
+        lng: userLocation.lng,
+        username: username
+      });
+    });
+
+    newSocket.on('searching', (data) => {
+      console.log('Searching for nearby players:', data.message);
+    });
+
+    newSocket.on('match_found', (data) => {
+      console.log('Match found!', data);
+      setSearchingNearby(false);
+      
+      Alert.alert(
+        'Match Found!',
+        `Matched with ${data.matchedWith} (${data.distance}km away)`,
+        [
+          {
+            text: 'Join Game',
+            onPress: () => {
+              newSocket.disconnect();
+              router.push({
+                pathname: '/game',
+                params: { 
+                  username, 
+                  roomCode: data.roomCode, 
+                  isHost: 'false',
+                  matchType: 'nearby'
+                },
+              });
+            }
+          }
+        ]
+      );
+    });
+
+    newSocket.on('error', (data) => {
+      setSearchingNearby(false);
+      Alert.alert('Error', data.message);
+      newSocket.disconnect();
+    });
+
+    setSocket(newSocket);
+  };
+
+  const handleCancelSearch = () => {
+    if (socket) {
+      socket.emit('cancel_search');
+      socket.disconnect();
+      setSocket(null);
+    }
+    setSearchingNearby(false);
+    setMode('menu');
+  };
+
+  if (searchingNearby) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.content}>
+          <View style={styles.searchingContainer}>
+            <Ionicons name="location" size={80} color="#6366f1" />
+            <ActivityIndicator size="large" color="#6366f1" style={styles.loader} />
+            <Text style={styles.searchingText}>Finding Nearby Players...</Text>
+            <Text style={styles.searchingSubtext}>
+              Searching within 50km radius
+            </Text>
+            {location && (
+              <Text style={styles.locationText}>
+                📍 Your location: {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
+              </Text>
+            )}
+            
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={handleCancelSearch}
+            >
+              <Text style={styles.cancelButtonText}>Cancel Search</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (mode === 'menu') {
     return (
@@ -70,10 +215,24 @@ export default function HomeScreen() {
           <View style={styles.buttonContainer}>
             <TouchableOpacity
               style={styles.primaryButton}
+              onPress={() => setMode('nearby')}
+            >
+              <Ionicons name="location" size={24} color="white" />
+              <Text style={styles.primaryButtonText}>Find Nearby Players</Text>
+            </TouchableOpacity>
+
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>OR</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <TouchableOpacity
+              style={styles.secondaryButton}
               onPress={() => setMode('create')}
             >
-              <Ionicons name="add-circle-outline" size={24} color="white" />
-              <Text style={styles.primaryButtonText}>Create Room</Text>
+              <Ionicons name="add-circle-outline" size={24} color="#6366f1" />
+              <Text style={styles.secondaryButtonText}>Create Room</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -81,7 +240,7 @@ export default function HomeScreen() {
               onPress={() => setMode('join')}
             >
               <Ionicons name="enter-outline" size={24} color="#6366f1" />
-              <Text style={styles.secondaryButtonText}>Join Room</Text>
+              <Text style={styles.secondaryButtonText}>Join with Code</Text>
             </TouchableOpacity>
           </View>
 
@@ -109,12 +268,12 @@ export default function HomeScreen() {
 
           <View style={styles.formHeader}>
             <Ionicons
-              name={mode === 'create' ? 'add-circle' : 'enter'}
+              name={mode === 'create' ? 'add-circle' : mode === 'nearby' ? 'location' : 'enter'}
               size={60}
               color="#6366f1"
             />
             <Text style={styles.formTitle}>
-              {mode === 'create' ? 'Create Room' : 'Join Room'}
+              {mode === 'create' ? 'Create Room' : mode === 'nearby' ? 'Find Nearby' : 'Join Room'}
             </Text>
           </View>
 
@@ -145,12 +304,27 @@ export default function HomeScreen() {
               </View>
             )}
 
+            {mode === 'nearby' && (
+              <View style={styles.infoBox}>
+                <Ionicons name="information-circle" size={24} color="#6366f1" />
+                <Text style={styles.infoText}>
+                  We'll find players near you (within 50km) who are also looking for a game!
+                </Text>
+              </View>
+            )}
+
             <TouchableOpacity
               style={styles.primaryButton}
-              onPress={mode === 'create' ? handleCreateRoom : handleJoinRoom}
+              onPress={
+                mode === 'create' 
+                  ? handleCreateRoom 
+                  : mode === 'nearby' 
+                  ? handleFindNearby 
+                  : handleJoinRoom
+              }
             >
               <Text style={styles.primaryButtonText}>
-                {mode === 'create' ? 'Create Room' : 'Join Room'}
+                {mode === 'create' ? 'Create Room' : mode === 'nearby' ? 'Find Match' : 'Join Room'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -225,6 +399,22 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
   },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 8,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#e2e8f0',
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    color: '#94a3b8',
+    fontSize: 14,
+    fontWeight: '600',
+  },
   footer: {
     position: 'absolute',
     bottom: 24,
@@ -281,5 +471,53 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingVertical: 12,
     color: '#1e293b',
+  },
+  infoBox: {
+    backgroundColor: '#dbeafe',
+    padding: 16,
+    borderRadius: 12,
+    flexDirection: 'row',
+    gap: 12,
+    alignItems: 'center',
+  },
+  infoText: {
+    flex: 1,
+    color: '#1e40af',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  searchingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loader: {
+    marginVertical: 24,
+  },
+  searchingText: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: 8,
+  },
+  searchingSubtext: {
+    fontSize: 16,
+    color: '#64748b',
+    marginBottom: 16,
+  },
+  locationText: {
+    fontSize: 14,
+    color: '#94a3b8',
+    marginBottom: 32,
+  },
+  cancelButton: {
+    backgroundColor: '#ef4444',
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+  },
+  cancelButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
