@@ -615,6 +615,29 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: '600',
   },
+  chatSidebar: {
+    width: 320,
+    backgroundColor: 'white',
+    margin: 8,
+    marginLeft: 4,
+    borderRadius: 12,
+    overflow: 'hidden',
+    flexDirection: 'column',
+  },
+  chatHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    padding: 12,
+    backgroundColor: '#f8fafc',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+  },
+  chatHeaderText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1e293b',
+  },
   chatContainer: {
     height: 160, // Reduced from 200 to give more space to canvas
     backgroundColor: 'white',
