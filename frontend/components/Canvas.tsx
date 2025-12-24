@@ -33,6 +33,25 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ canDraw, onStrokeSent }, re
       currentStrokeRef.current = [];
     },
     drawStroke: (stroke: Stroke) => {
+      // Check if canvas size is initialized
+      if (canvasSizeRef.current.width === 0 || canvasSizeRef.current.height === 0) {
+        console.warn('Canvas size not initialized yet, retrying...');
+        // Retry after a short delay
+        setTimeout(() => {
+          if (canvasSizeRef.current.width > 0 && canvasSizeRef.current.height > 0) {
+            const denormalizedStroke = {
+              ...stroke,
+              points: stroke.points.map(p => ({
+                x: p.x * canvasSizeRef.current.width,
+                y: p.y * canvasSizeRef.current.height
+              }))
+            };
+            setStrokes((prev) => [...prev, denormalizedStroke]);
+          }
+        }, 100);
+        return;
+      }
+      
       // Denormalize coordinates based on current canvas size
       const denormalizedStroke = {
         ...stroke,
