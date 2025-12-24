@@ -556,7 +556,10 @@ const styles = StyleSheet.create({
   },
   mainContent: {
     flex: 1,
-    flexDirection: 'row',
+    flexDirection: 'row', // Side-by-side on desktop
+  },
+  mainContentMobile: {
+    flexDirection: 'column', // Stacked on mobile
   },
   canvasContainer: {
     flex: 1,
@@ -566,6 +569,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     minHeight: 400,
+  },
+  canvasContainerMobile: {
+    marginRight: 8, // Full margin on mobile
+    flex: 1,
   },
   wordDisplay: {
     backgroundColor: '#6366f1',
