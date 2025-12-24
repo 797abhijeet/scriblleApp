@@ -22,7 +22,7 @@ interface Player {
   sid: string;
   username: string;
   score: number;
-  is_host: boolean;
+  isHost: boolean;
 }
 
 interface Message {
