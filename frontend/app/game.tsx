@@ -540,6 +540,16 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
   },
+  drawingInstructions: {
+    backgroundColor: '#fef3c7',
+    padding: 8,
+    alignItems: 'center',
+  },
+  instructionText: {
+    color: '#92400e',
+    fontSize: 14,
+    fontWeight: '500',
+  },
   waitingContainer: {
     flex: 1,
     alignItems: 'center',
