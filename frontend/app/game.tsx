@@ -331,119 +331,127 @@ export default function GameScreen() {
         </ScrollView>
       </View>
 
-      {/* Canvas */}
-      <View style={styles.canvasContainer}>
-        {gameStarted ? (
-          <>
-            {isDrawer && (
-              <View style={styles.wordDisplay}>
-                <Text style={styles.wordText}>✏️ Draw: {currentWord}</Text>
-              </View>
-            )}
-            {!isDrawer && currentWord && (
-              <View style={styles.wordDisplay}>
-                <Text style={styles.wordText}>
-                  🔍 Word: {currentWord.replace(/./g, '_ ')}
-                </Text>
-              </View>
-            )}
-            {isDrawer && (
-              <View style={styles.drawingInstructions}>
-                <Text style={styles.instructionText}>
-                  👆 Touch and drag to draw
-                </Text>
-              </View>
-            )}
-            <Canvas
-              ref={canvasRef}
-              canDraw={canDraw}
-              onStrokeSent={handleStrokeSent}
-            />
-            {canDraw && (
-              <TouchableOpacity
-                style={styles.clearButton}
-                onPress={handleClearCanvas}
-              >
-                <Ionicons name="trash-outline" size={20} color="white" />
-                <Text style={styles.clearButtonText}>Clear</Text>
-              </TouchableOpacity>
-            )}
-          </>
-        ) : (
-          <View style={styles.waitingContainer}>
-            <Ionicons name="people" size={64} color="#cbd5e1" />
-            <Text style={styles.waitingText}>
-              Waiting for players...
-            </Text>
-            <Text style={styles.waitingSubtext}>
-              {players.length} / 8 players
-            </Text>
-            {isHost === 'true' && (
-              <Text style={styles.waitingSubtext}>
-                Need at least 2 players to start
+      {/* Canvas and Chat - Side by Side Layout */}
+      <View style={styles.mainContent}>
+        {/* Canvas */}
+        <View style={styles.canvasContainer}>
+          {gameStarted ? (
+            <>
+              {isDrawer && (
+                <View style={styles.wordDisplay}>
+                  <Text style={styles.wordText}>✏️ Draw: {currentWord}</Text>
+                </View>
+              )}
+              {!isDrawer && currentWord && (
+                <View style={styles.wordDisplay}>
+                  <Text style={styles.wordText}>
+                    🔍 Word: {currentWord.replace(/./g, '_ ')}
+                  </Text>
+                </View>
+              )}
+              {isDrawer && (
+                <View style={styles.drawingInstructions}>
+                  <Text style={styles.instructionText}>
+                    👆 Touch and drag to draw
+                  </Text>
+                </View>
+              )}
+              <Canvas
+                ref={canvasRef}
+                canDraw={canDraw}
+                onStrokeSent={handleStrokeSent}
+              />
+              {canDraw && (
+                <TouchableOpacity
+                  style={styles.clearButton}
+                  onPress={handleClearCanvas}
+                >
+                  <Ionicons name="trash-outline" size={20} color="white" />
+                  <Text style={styles.clearButtonText}>Clear</Text>
+                </TouchableOpacity>
+              )}
+            </>
+          ) : (
+            <View style={styles.waitingContainer}>
+              <Ionicons name="people" size={64} color="#cbd5e1" />
+              <Text style={styles.waitingText}>
+                Waiting for players...
               </Text>
+              <Text style={styles.waitingSubtext}>
+                {players.length} / 8 players
+              </Text>
+              {isHost === 'true' && (
+                <Text style={styles.waitingSubtext}>
+                  Need at least 2 players to start
+                </Text>
+              )}
+            </View>
+          )}
+        </View>
+
+        {/* Chat Sidebar */}
+        {gameStarted && (
+          <View style={styles.chatSidebar}>
+            <View style={styles.chatHeader}>
+              <Ionicons name="chatbubbles" size={20} color="#6366f1" />
+              <Text style={styles.chatHeaderText}>Chat</Text>
+            </View>
+            
+            <ScrollView
+              ref={scrollViewRef}
+              style={styles.messagesList}
+              contentContainerStyle={styles.messagesContent}
+            >
+              {messages.map((msg, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.messageItem,
+                    msg.type === 'system' && styles.systemMessage,
+                    msg.type === 'correct' && styles.correctMessage,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.messageText,
+                      msg.type === 'system' && styles.systemMessageText,
+                      msg.type === 'correct' && styles.correctMessageText,
+                    ]}
+                  >
+                    {msg.type === 'system' || msg.type === 'correct' ? (
+                      msg.message
+                    ) : (
+                      <>
+                        <Text style={styles.messageUsername}>{msg.username}: </Text>
+                        {msg.message}
+                      </>
+                    )}
+                  </Text>
+                </View>
+              ))}
+            </ScrollView>
+
+            {!isDrawer && (
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.guessInput}
+                  placeholder="Type your guess..."
+                  value={guessInput}
+                  onChangeText={setGuessInput}
+                  onSubmitEditing={handleSendGuess}
+                  returnKeyType="send"
+                />
+                <TouchableOpacity
+                  style={styles.sendButton}
+                  onPress={handleSendGuess}
+                >
+                  <Ionicons name="send" size={20} color="white" />
+                </TouchableOpacity>
+              </View>
             )}
           </View>
         )}
       </View>
-
-      {/* Chat/Guess Area */}
-      {gameStarted && (
-        <View style={styles.chatContainer}>
-          <ScrollView
-            ref={scrollViewRef}
-            style={styles.messagesList}
-            contentContainerStyle={styles.messagesContent}
-          >
-            {messages.map((msg, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.messageItem,
-                  msg.type === 'system' && styles.systemMessage,
-                  msg.type === 'correct' && styles.correctMessage,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.messageText,
-                    msg.type === 'system' && styles.systemMessageText,
-                    msg.type === 'correct' && styles.correctMessageText,
-                  ]}
-                >
-                  {msg.type === 'system' || msg.type === 'correct' ? (
-                    msg.message
-                  ) : (
-                    <>
-                      <Text style={styles.messageUsername}>{msg.username}: </Text>
-                      {msg.message}
-                    </>
-                  )}
-                </Text>
-              </View>
-            ))}
-          </ScrollView>
-
-          {!isDrawer && (
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.guessInput}
-                placeholder="Type your guess..."
-                value={guessInput}
-                onChangeText={setGuessInput}
-                onSubmitEditing={handleSendGuess}
-                returnKeyType="send"
-              />
-              <TouchableOpacity
-                style={styles.sendButton}
-                onPress={handleSendGuess}
-              >
-                <Ionicons name="send" size={20} color="white" />
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-      )}
     </SafeAreaView>
   );
 }
