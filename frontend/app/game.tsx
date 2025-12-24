@@ -540,8 +540,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'white',
     margin: 8,
+    marginBottom: 4, // Less margin at bottom to give more space
     borderRadius: 12,
     overflow: 'hidden',
+    minHeight: 400, // Ensure minimum height for drawing
   },
   wordDisplay: {
     backgroundColor: '#6366f1',
