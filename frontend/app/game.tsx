@@ -604,7 +604,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   chatContainer: {
-    height: 200,
+    height: 160, // Reduced from 200 to give more space to canvas
     backgroundColor: 'white',
     borderTopWidth: 1,
     borderTopColor: '#e2e8f0',
