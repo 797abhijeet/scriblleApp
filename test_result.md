@@ -240,14 +240,28 @@ metadata:
   test_sequence: 1
   run_ui: false
 
+  - task: "External Socket.IO URL Routing"
+    implemented: true
+    working: false
+    file: "backend/server.js"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "CRITICAL ISSUE: External URL https://scribbly-draw.preview.emergentagent.com/socket.io/ returns frontend HTML instead of Socket.IO responses. Socket.IO routing not properly configured for external access. Local backend works perfectly."
+
 test_plan:
   current_focus:
-    - "Socket.IO External URL Routing"
-    - "Incorrect Guess Chat Broadcasting"
-  stuck_tasks: []
+    - "External Socket.IO URL Routing"
+  stuck_tasks:
+    - "External Socket.IO URL Routing"
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
     - agent: "testing"
       message: "Comprehensive backend testing completed. API endpoints working perfectly. Socket.IO functionality working well with 13/14 tests passing. Only minor issue with incorrect guess chat broadcasting. External Socket.IO URL routing issue identified - Socket.IO requests to external URL return frontend HTML instead of Socket.IO responses, but local backend works perfectly."
+    - agent: "testing"
+      message: "CRITICAL ROOM TESTING COMPLETED: User's reported room creation and joining issue is NOT reproducible. Tested exact scenario: Tab 1 creates room TEST01, Tab 2 joins same room - WORKS PERFECTLY. Both tabs see both players correctly. Multiple player joins also work. Issue may have been temporary or resolved. Backend running Node.js server (not Python FastAPI). Only issue found: External Socket.IO URL routing broken (returns HTML instead of Socket.IO), but local backend works perfectly."
