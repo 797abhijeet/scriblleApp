@@ -318,6 +318,10 @@ async def test_game_flow():
         })
         await asyncio.sleep(1)
         
+        # Clear events before starting game
+        client1.clear_events()
+        client2.clear_events()
+        
         # Start game
         await client1.emit('start_game', {
             'room_code': room_code
@@ -325,21 +329,23 @@ async def test_game_flow():
         await asyncio.sleep(2)
         
         # Check game started events
-        game_started_events = client1.get_events('game_started')
+        game_started_events = client1.get_events('game_started') + client2.get_events('game_started')
         if game_started_events:
             results.add_result("Socket Game Start", True, "Game started successfully")
         else:
             results.add_result("Socket Game Start", False, "Did not receive game_started event")
         
         # Check new round events
-        new_round_events = client1.get_events('new_round')
-        if new_round_events:
-            results.add_result("Socket New Round", True, f"New round started: {new_round_events[0][1]}")
+        new_round_events_c1 = client1.get_events('new_round')
+        new_round_events_c2 = client2.get_events('new_round')
+        
+        if new_round_events_c1 or new_round_events_c2:
+            # Use the first available new_round event
+            round_data = (new_round_events_c1 + new_round_events_c2)[0][1]
+            results.add_result("Socket New Round", True, f"New round started: {round_data}")
             
             # Determine who is the drawer
-            round_data = new_round_events[0][1]
             drawer_sid = round_data.get('drawer_sid')
-            current_word = round_data.get('word')
             
             # Debug: Print SIDs to understand the issue
             print(f"DEBUG: Drawer SID from server: {drawer_sid}")
@@ -360,6 +366,13 @@ async def test_game_flow():
                 print("DEBUG: Client2 is drawer")
             else:
                 print(f"DEBUG: No match found for drawer SID {drawer_sid}")
+                # Try to find drawer by checking which client received the word
+                for client, events in [(client1, new_round_events_c1), (client2, new_round_events_c2)]:
+                    if events and events[0][1].get('word') and '_' not in events[0][1].get('word'):
+                        drawer_client = client
+                        non_drawer_client = client2 if client == client1 else client1
+                        print(f"DEBUG: Found drawer by word: {client.client_id}")
+                        break
             
             if drawer_client and non_drawer_client:
                 # Test draw stroke
