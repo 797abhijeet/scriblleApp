@@ -341,11 +341,18 @@ async def test_game_flow():
             drawer_sid = round_data.get('drawer_sid')
             current_word = round_data.get('word')
             
-            # Test drawing functionality
-            if drawer_sid:
-                drawer_client = client1 if client1.sio.sid == drawer_sid else client2
-                non_drawer_client = client2 if drawer_client == client1 else client1
-                
+            # Find which client is the drawer
+            drawer_client = None
+            non_drawer_client = None
+            
+            if client1.sio.sid == drawer_sid:
+                drawer_client = client1
+                non_drawer_client = client2
+            elif client2.sio.sid == drawer_sid:
+                drawer_client = client2
+                non_drawer_client = client1
+            
+            if drawer_client and non_drawer_client:
                 # Test draw stroke
                 await drawer_client.emit('draw_stroke', {
                     'room_code': room_code,
@@ -373,30 +380,37 @@ async def test_game_flow():
                 else:
                     results.add_result("Socket Canvas Clear", False, "Canvas clear not received")
                 
-                # Test guessing (if we know the word)
-                if current_word and current_word != '_' * len(current_word):
-                    await non_drawer_client.emit('send_guess', {
-                        'room_code': room_code,
-                        'guess': current_word
-                    })
-                    await asyncio.sleep(1)
-                    
-                    guess_result_events = non_drawer_client.get_events('guess_result')
-                    if guess_result_events:
-                        guess_data = guess_result_events[0][1]
-                        if guess_data.get('correct'):
-                            results.add_result("Socket Correct Guess", True, f"Correct guess recognized: {guess_data}")
+                # Test guessing (if we know the word from drawer's perspective)
+                # The drawer gets the actual word, non-drawer gets masked word
+                drawer_round_events = drawer_client.get_events('new_round')
+                if drawer_round_events:
+                    drawer_word = drawer_round_events[0][1].get('word')
+                    if drawer_word and '_' not in drawer_word:
+                        await non_drawer_client.emit('send_guess', {
+                            'room_code': room_code,
+                            'guess': drawer_word
+                        })
+                        await asyncio.sleep(1)
+                        
+                        guess_result_events = non_drawer_client.get_events('guess_result')
+                        if guess_result_events:
+                            guess_data = guess_result_events[0][1]
+                            if guess_data.get('correct'):
+                                results.add_result("Socket Correct Guess", True, f"Correct guess recognized: {guess_data}")
+                            else:
+                                results.add_result("Socket Correct Guess", False, f"Guess not recognized as correct: {guess_data}")
                         else:
-                            results.add_result("Socket Correct Guess", False, f"Guess not recognized as correct: {guess_data}")
+                            results.add_result("Socket Correct Guess", False, "No guess result received")
+                        
+                        # Check for correct_guess event
+                        correct_guess_events = client1.get_events('correct_guess') + client2.get_events('correct_guess')
+                        if correct_guess_events:
+                            results.add_result("Socket Correct Guess Broadcast", True, f"Correct guess broadcasted: {correct_guess_events[0][1]}")
+                        else:
+                            results.add_result("Socket Correct Guess Broadcast", False, "Correct guess not broadcasted")
                     else:
-                        results.add_result("Socket Correct Guess", False, "No guess result received")
-                    
-                    # Check for correct_guess event
-                    correct_guess_events = client1.get_events('correct_guess') + client2.get_events('correct_guess')
-                    if correct_guess_events:
-                        results.add_result("Socket Correct Guess Broadcast", True, f"Correct guess broadcasted: {correct_guess_events[0][1]}")
-                    else:
-                        results.add_result("Socket Correct Guess Broadcast", False, "Correct guess not broadcasted")
+                        results.add_result("Socket Correct Guess", False, f"Could not determine word for testing: {drawer_word}")
+                        results.add_result("Socket Correct Guess Broadcast", False, "Could not test due to word issue")
                 
                 # Test incorrect guess
                 await non_drawer_client.emit('send_guess', {
@@ -410,6 +424,12 @@ async def test_game_flow():
                     results.add_result("Socket Incorrect Guess", True, f"Incorrect guess sent as chat: {chat_events[-1][1]}")
                 else:
                     results.add_result("Socket Incorrect Guess", False, "Incorrect guess not handled properly")
+            else:
+                results.add_result("Socket Drawing", False, "Could not determine drawer")
+                results.add_result("Socket Canvas Clear", False, "Could not determine drawer")
+                results.add_result("Socket Correct Guess", False, "Could not determine drawer")
+                results.add_result("Socket Correct Guess Broadcast", False, "Could not determine drawer")
+                results.add_result("Socket Incorrect Guess", False, "Could not determine drawer")
             
         else:
             results.add_result("Socket New Round", False, "Did not receive new_round event")
