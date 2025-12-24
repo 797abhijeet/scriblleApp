@@ -67,6 +67,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ canDraw, onStrokeSent }, re
   const handleLayout = (event: any) => {
     const { width, height } = event.nativeEvent.layout;
     canvasSizeRef.current = { width, height };
+    console.log('Canvas layout set:', width, 'x', height);
   };
 
   const normalizePoint = (x: number, y: number) => {
