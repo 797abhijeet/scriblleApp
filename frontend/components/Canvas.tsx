@@ -192,10 +192,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#ffffff',
+    // @ts-ignore - web-specific touch handling
+    touchAction: 'none', // Prevents scrolling/zooming on touch
   },
   svg: {
     backgroundColor: '#ffffff',
     cursor: 'crosshair',
+    // @ts-ignore - web-specific
+    touchAction: 'none',
   },
 });
 
