@@ -239,19 +239,31 @@ export default function GameScreen() {
   };
 
   const handleLeaveRoom = () => {
-    Alert.alert('Leave Room', 'Are you sure you want to leave?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Leave',
-        style: 'destructive',
-        onPress: () => {
-          if (socket) {
-            socket.disconnect();
-          }
-          router.back();
+    if (Platform.OS === 'web') {
+      // For web, use browser confirm
+      const confirmed = window.confirm('Are you sure you want to leave the room?');
+      if (confirmed) {
+        if (socket) {
+          socket.disconnect();
+        }
+        router.back();
+      }
+    } else {
+      // For mobile, use Alert
+      Alert.alert('Leave Room', 'Are you sure you want to leave?', [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Leave',
+          style: 'destructive',
+          onPress: () => {
+            if (socket) {
+              socket.disconnect();
+            }
+            router.back();
+          },
         },
-      },
-    ]);
+      ]);
+    }
   };
 
   const handleStrokeSent = (strokeData: any) => {
