@@ -341,6 +341,11 @@ async def test_game_flow():
             drawer_sid = round_data.get('drawer_sid')
             current_word = round_data.get('word')
             
+            # Debug: Print SIDs to understand the issue
+            print(f"DEBUG: Drawer SID from server: {drawer_sid}")
+            print(f"DEBUG: Client1 SID: {client1.sio.sid}")
+            print(f"DEBUG: Client2 SID: {client2.sio.sid}")
+            
             # Find which client is the drawer
             drawer_client = None
             non_drawer_client = None
@@ -348,9 +353,13 @@ async def test_game_flow():
             if client1.sio.sid == drawer_sid:
                 drawer_client = client1
                 non_drawer_client = client2
+                print("DEBUG: Client1 is drawer")
             elif client2.sio.sid == drawer_sid:
                 drawer_client = client2
                 non_drawer_client = client1
+                print("DEBUG: Client2 is drawer")
+            else:
+                print(f"DEBUG: No match found for drawer SID {drawer_sid}")
             
             if drawer_client and non_drawer_client:
                 # Test draw stroke
