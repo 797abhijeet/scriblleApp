@@ -10,8 +10,8 @@ import requests
 import json
 import time
 
-# Configuration
-BACKEND_URL = "https://scribbly-draw.preview.emergentagent.com"
+# Configuration - Use local backend since external routing has Socket.IO issues
+BACKEND_URL = "http://localhost:8001"
 API_BASE = f"{BACKEND_URL}/api"
 
 class RoomTestClient:
