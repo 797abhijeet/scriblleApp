@@ -147,9 +147,13 @@ export default function GameScreen() {
     });
 
     newSocket.on('stroke_drawn', (data) => {
-      console.log('Received stroke:', data);
-      if (canvasRef.current && !isDrawer) {
+      console.log('Received stroke from server:', data, 'isDrawer:', isDrawer);
+      // Always draw strokes received from server (server only sends to non-drawers anyway)
+      if (canvasRef.current) {
+        console.log('Drawing stroke on canvas');
         canvasRef.current.drawStroke(data);
+      } else {
+        console.log('Canvas ref not available');
       }
     });
 
