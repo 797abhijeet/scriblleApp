@@ -8,7 +8,9 @@ require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
+// Create Socket.IO server with custom path
 const io = new Server(server, {
+  path: '/api/socket.io',  // Use /api prefix for proper routing
   cors: {
     origin: '*',
     methods: ['GET', 'POST']
