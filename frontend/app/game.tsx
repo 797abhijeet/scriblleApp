@@ -641,6 +641,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     flexDirection: 'column',
   },
+  chatMobile: {
+    width: '100%', // Full width on mobile
+    height: 180, // Fixed height on mobile
+    margin: 8,
+    marginTop: 4,
+  },
   chatHeader: {
     flexDirection: 'row',
     alignItems: 'center',
