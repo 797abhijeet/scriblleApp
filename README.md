@@ -1,19 +1,20 @@
-# Scribble Game - Mobile App
+# Scribble Game - Real-time Multiplayer Drawing Game
 
-A real-time multiplayer drawing and guessing game with **location-based matching** and **code-based rooms**. Built with Expo (React Native), Node.js, Express, Socket.IO, and MongoDB.
+A real-time multiplayer drawing and guessing game with **location-based matching** and **code-based rooms**. Available as both a **mobile app (Expo)** and **web app (React)**.
 
 ## 🎮 Features
 
 ### Core Gameplay
 - **Real-time Multiplayer**: Play with 2-8 players simultaneously
-- **Drawing Canvas**: Smooth SVG-based drawing with touch support
+- **Drawing Canvas**: Smooth SVG-based drawing with touch/mouse support
 - **Turn-based System**: Players take turns drawing while others guess
 - **Live Chat**: Real-time messaging for word guessing
 - **Smart Scoring**: Points based on correct guesses and speed (50-200 points)
 - **Multiple Rounds**: Configurable rounds (default: 3)
+- **Instant Round Progression**: Moves to next round when all players guess correctly
 - **60+ Word Bank**: Diverse vocabulary for drawing prompts
 
-### 🌍 Location-Based Matching (NEW!)
+### 🌍 Location-Based Matching
 - **Find Nearby Players**: Automatically match with players within 50km
 - **GPS Integration**: Uses device location to find opponents nearby
 - **Smart Matching Algorithm**: Connects closest available players
@@ -23,22 +24,188 @@ A real-time multiplayer drawing and guessing game with **location-based matching
 ### 🔑 Code-Based Rooms
 - **Create Room**: Generate a unique 6-character room code
 - **Join Room**: Enter a code to join friend's game
+- **Join Mid-Game**: Players can join games already in progress
 - **Private Sessions**: Play with specific friends using codes
 
-## 📱 How to Play
+## 🚀 Tech Stack
 
-### Option 1: Find Nearby Players
-1. Open the app and enter your username
-2. Tap **"Find Nearby Players"**
-3. Grant location permission
-4. Wait for nearby match (within 50km)
-5. Get matched and start playing!
+### Frontend Options
 
-### Option 2: Create/Join with Code
-1. Enter your username
-2. **Create Room**: Generate a code and share with friends
-3. **Join Room**: Enter friend's code to join
-4. Host starts the game when ready
+#### Option 1: Web Application (React + TypeScript)
+- **Framework**: React 18 with Vite
+- **Language**: TypeScript
+- **Routing**: React Router DOM
+- **Real-time**: Socket.IO Client
+- **Location**: Browser Geolocation API
+- **Drawing**: SVG with HTML5 Canvas
+- **Styling**: CSS Modules
+- **Build Tool**: Vite (fast HMR)
+
+#### Option 2: Mobile Application (Expo + React Native)
+- **Framework**: Expo (React Native)
+- **Language**: TypeScript
+- **Navigation**: Expo Router (file-based routing)
+- **Real-time**: Socket.IO Client
+- **Location**: expo-location for GPS
+- **Drawing**: react-native-svg for vector graphics
+- **Styling**: React Native StyleSheet
+- **Platform**: iOS & Android (deployable to Play Store/App Store)
+
+### Backend (Shared)
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **Real-time**: Socket.IO (WebSocket + polling)
+- **Database**: MongoDB with Mongoose
+- **Geolocation**: geolib (Haversine distance calculation)
+- **CORS**: Enabled for cross-origin requests
+
+## 📂 Project Structure
+
+```
+/app
+├── backend/                    # Node.js + Express + Socket.IO
+│   ├── server.js              # Main server file
+│   ├── package.json
+│   └── .env
+│
+├── web-frontend/              # React Web App (NEW!)
+│   ├── src/
+│   │   ├── main.tsx          # Entry point
+│   │   ├── App.tsx           # Router setup
+│   │   ├── pages/
+│   │   │   ├── HomePage.tsx  # Home screen
+│   │   │   └── GamePage.tsx  # Game screen
+│   │   ├── components/
+│   │   │   └── Canvas.tsx    # Drawing canvas
+│   │   └── styles/           # CSS files
+│   ├── package.json
+│   ├── vite.config.ts
+│   └── index.html
+│
+└── frontend/                  # Expo Mobile App (Original)
+    ├── app/
+    │   ├── index.tsx         # Home screen
+    │   └── game.tsx          # Game screen
+    ├── components/
+    │   └── Canvas.tsx        # Drawing canvas
+    ├── app.json
+    └── package.json
+```
+
+## 🛠️ Installation & Setup
+
+### Prerequisites
+- Node.js 18+ installed
+- MongoDB running locally or remote connection
+- Git (optional)
+
+### 1. Clone Repository
+```bash
+git clone <repository-url>
+cd app
+```
+
+### 2. Setup Backend
+```bash
+cd backend
+npm install
+
+# Create .env file
+echo "MONGO_URL=mongodb://localhost:27017/scribble_game" > .env
+echo "PORT=8001" >> .env
+
+# Start backend
+npm start
+```
+
+Backend runs on: `http://localhost:8001`
+
+### 3. Setup Web Frontend (React)
+
+```bash
+cd ../web-frontend
+yarn install
+
+# Create .env file
+echo "VITE_BACKEND_URL=http://localhost:8001" > .env
+
+# Start development server
+yarn dev
+```
+
+Web app runs on: `http://localhost:3000`
+
+### 4. Setup Mobile Frontend (Expo) - Optional
+
+```bash
+cd ../frontend
+yarn install
+
+# Start Expo dev server
+yarn start
+```
+
+Expo dev server runs on: `http://localhost:3000` (if web-frontend not running)
+
+## 🌐 Running the Web Application
+
+### Development Mode
+```bash
+cd web-frontend
+yarn dev
+```
+
+### Production Build
+```bash
+cd web-frontend
+yarn build
+yarn preview
+```
+
+### Deploy to Production
+Build output is in `dist/` folder. Deploy to:
+- **Vercel**: `vercel deploy`
+- **Netlify**: Drag & drop `dist` folder
+- **GitHub Pages**: Configure in repository settings
+- **Any static host**: Upload `dist` folder contents
+
+## 📱 Running the Mobile Application
+
+### Development
+```bash
+cd frontend
+yarn start
+```
+
+Then:
+- Press `w` for web
+- Scan QR code with Expo Go app for mobile testing
+
+### Build for App Stores
+
+**Android (Google Play):**
+```bash
+cd frontend
+eas build --platform android --profile production
+```
+
+**iOS (App Store):**
+```bash
+cd frontend
+eas build --platform ios --profile production
+```
+
+See [Play Store Deployment Guide](#play-store-deployment) below for details.
+
+## 🎯 How to Play
+
+### Web Version
+1. Open browser to `http://localhost:3000`
+2. Enter username
+3. Choose:
+   - **Find Nearby Players**: Match with players within 50km
+   - **Create Room**: Get a 6-digit code to share
+   - **Join with Code**: Enter friend's code
 
 ### Gameplay
 - One player draws the secret word
@@ -48,56 +215,7 @@ A real-time multiplayer drawing and guessing game with **location-based matching
 - Players rotate drawing duties
 - Highest score wins!
 
-## 🛠️ Technical Stack
-
-### Frontend (Mobile App)
-- **Framework**: Expo (React Native 0.79+)
-- **Navigation**: Expo Router (file-based routing)
-- **Real-time**: Socket.IO Client
-- **Location**: expo-location for GPS
-- **Drawing**: react-native-svg for vector graphics
-- **Language**: TypeScript
-- **UI**: Native React Native components
-
-### Backend (API Server)
-- **Runtime**: Node.js
-- **Framework**: Express.js
-- **Real-time**: Socket.IO (WebSocket + polling)
-- **Database**: MongoDB with Mongoose
-- **Geolocation**: geolib (Haversine distance calculation)
-- **CORS**: Enabled for cross-origin requests
-
-### Database Schema
-```javascript
-// Game Room
-{
-  roomCode: String,
-  players: [{
-    sid: String,
-    username: String,
-    score: Number,
-    isHost: Boolean
-  }],
-  gameStarted: Boolean,
-  currentRound: Number,
-  maxRounds: Number,
-  currentDrawerSid: String,
-  currentWord: String,
-  strokes: Array,
-  guessedPlayers: Array
-}
-
-// Player Location (in-memory)
-{
-  socketId: String,
-  lat: Number,
-  lng: Number,
-  username: String,
-  timestamp: Number
-}
-```
-
-## 🌐 Socket.IO Events
+## 🔌 Socket.IO Events
 
 ### Client → Server
 | Event | Purpose | Data |
@@ -132,175 +250,254 @@ A real-time multiplayer drawing and guessing game with **location-based matching
 | `round_end` | Round ended | `{word, players}` |
 | `game_end` | Game finished | `{players}` |
 
-## 📍 Location Matching Algorithm
-
-```javascript
-// 1. User initiates nearby search with GPS coordinates
-find_nearby_match({lat, lng, username})
-
-// 2. Server calculates distance to all searching players
-distance = haversine(lat1, lng1, lat2, lng2)
-
-// 3. If player found within 50km radius:
-//    - Create room automatically
-//    - Join both players
-//    - Notify both with distance
-
-// 4. If no match:
-//    - Add to search queue
-//    - Wait for another player
-```
-
-## 🚀 Deployment
-
-### Google Play Store
-1. Configure `app.json`:
-   ```json
-   {
-     "android": {
-       "package": "com.yourcompany.scribble",
-       "permissions": [
-         "ACCESS_COARSE_LOCATION",
-         "ACCESS_FINE_LOCATION"
-       ]
-     }
-   }
-   ```
-
-2. Build APK/AAB:
-   ```bash
-   eas build --platform android --profile production
-   ```
-
-3. Submit to Play Store:
-   - Create Play Console account ($25)
-   - Upload AAB file
-   - Configure store listing
-   - Set location permissions rationale
-   - Submit for review
-
-### Backend Deployment
-- Deploy Node.js server to any cloud platform
-- Requires: Node.js 18+, MongoDB instance
-- Environment variables:
-  ```
-  MONGO_URL=mongodb://...
-  PORT=8001
-  ```
-
-## 🔒 Permissions
-
-### Android (app.json)
-```json
-{
-  "android": {
-    "permissions": [
-      "ACCESS_COARSE_LOCATION",
-      "ACCESS_FINE_LOCATION",
-      "INTERNET"
-    ]
-  }
-}
-```
-
-### iOS (Info.plist - auto-generated)
-- `NSLocationWhenInUseUsageDescription`: "Find nearby players for multiplayer games"
-
 ## ⚙️ Configuration
 
 ### Backend (`server.js`)
 ```javascript
 const NEARBY_RADIUS_KM = 50;           // Match radius in kilometers
-const LOCATION_UPDATE_INTERVAL = 30000; // 30 seconds
 const MAX_PLAYERS = 8;                  // Players per room
 const MAX_ROUNDS = 3;                   // Number of rounds
 const ROUND_DURATION = 60000;           // 60 seconds per round
 ```
 
 ### Word Bank
-Located in `server.js` - add/remove words as needed:
+Located in `backend/server.js` - add/remove words:
 ```javascript
 const WORD_BANK = ['cat', 'dog', 'house', ...];
 ```
 
+## 🚀 Deployment
+
+### Web Application
+
+**Option 1: Vercel (Recommended)**
+```bash
+cd web-frontend
+npm install -g vercel
+vercel
+```
+
+**Option 2: Netlify**
+```bash
+# Build
+cd web-frontend
+yarn build
+
+# Deploy dist/ folder via Netlify CLI or web interface
+```
+
+**Option 3: Docker**
+```dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY web-frontend/package.json .
+RUN yarn install
+COPY web-frontend .
+RUN yarn build
+CMD ["yarn", "preview"]
+```
+
+### Backend Deployment
+
+**Deploy to:**
+- **Railway**: Connect GitHub repo
+- **Render**: Deploy from Git
+- **Heroku**: `git push heroku main`
+- **DigitalOcean**: App Platform
+- **AWS/GCP**: EC2/Compute Engine
+
+**Environment Variables:**
+```
+MONGO_URL=mongodb+srv://...
+PORT=8001
+NODE_ENV=production
+```
+
+### Mobile App (Play Store)
+
+See detailed guide in previous documentation. Summary:
+
+1. **Setup EAS Build**
+   ```bash
+   cd frontend
+   npm install -g eas-cli
+   eas build:configure
+   ```
+
+2. **Build AAB**
+   ```bash
+   eas build --platform android --profile production
+   ```
+
+3. **Upload to Play Console**
+   - Create app in Play Console
+   - Upload AAB file
+   - Complete store listing
+   - Submit for review
+
+## 🔒 Environment Variables
+
+### Backend (`.env`)
+```env
+MONGO_URL=mongodb://localhost:27017/scribble_game
+PORT=8001
+NODE_ENV=development
+```
+
+### Web Frontend (`.env`)
+```env
+VITE_BACKEND_URL=http://localhost:8001
+```
+
+### Mobile Frontend (`.env`)
+```env
+EXPO_PUBLIC_BACKEND_URL=https://your-backend-url.com
+```
+
 ## 🧪 Testing
 
-### Test Location Matching
-To test nearby matching on same device:
-1. Open two browser tabs or use two phones
-2. Both users: "Find Nearby Players"
-3. Grant location permissions
-4. Should match automatically if within 50km
+### Backend Testing
+```bash
+# Test API endpoint
+curl http://localhost:8001/api
 
-### Test Code-Based Rooms
-1. User 1: Create room → Get code (e.g., "ABC123")
-2. User 2: Join room → Enter "ABC123"
-3. User 1: Start game
-4. Play!
+# Test health check
+curl http://localhost:8001/health
 
-## 📦 Project Structure
-
+# Test Socket.IO connection
+# Use browser console or Postman
 ```
-/app
-├── frontend/                 # Expo React Native app
-│   ├── app/
-│   │   ├── index.tsx        # Home screen (location/code matching)
-│   │   └── game.tsx         # Game screen (canvas, chat, scores)
-│   ├── components/
-│   │   └── Canvas.tsx       # Drawing canvas component
-│   ├── app.json             # Expo configuration
-│   └── package.json
-├── backend/                 # Node.js Express server
-│   ├── server.js           # Main server file
-│   ├── package.json
-│   └── .env
-└── README.md
-```
+
+### Frontend Testing
+- Open multiple browser tabs/windows
+- Test create/join room flow
+- Test drawing synchronization
+- Test location matching
+- Test mobile responsiveness
 
 ## 🐛 Troubleshooting
 
-### Location Not Working
-- Ensure location permissions granted
-- Check GPS is enabled on device
-- Try in outdoor area for better signal
+### Web App Issues
 
-### No Nearby Players Found
-- Increase search radius in `server.js`
-- Test with multiple devices in same location
-- Check both devices have location enabled
+**Issue: Backend connection fails**
+- Check `VITE_BACKEND_URL` in `.env`
+- Ensure backend is running on port 8001
+- Check browser console for errors
 
-### Socket Connection Failed
-- Verify backend server is running
-- Check `EXPO_PUBLIC_BACKEND_URL` in `.env`
-- Ensure firewall allows WebSocket connections
+**Issue: Drawing not synchronizing**
+- Open browser console (F12)
+- Check for Socket.IO connection logs
+- Verify both users are in same room
 
-## 🎯 Future Enhancements
+**Issue: Location not working**
+- Grant browser location permissions
+- Use HTTPS in production (HTTP blocks geolocation)
+- Check browser console for errors
 
-- [ ] AI opponent for solo play
-- [ ] Custom word lists and categories
-- [ ] Color picker and brush sizes
-- [ ] Drawing tools (shapes, fill, eraser)
-- [ ] Achievements and statistics
-- [ ] Global leaderboards
-- [ ] Voice chat during gameplay
-- [ ] Replay drawing animations
-- [ ] Tournament mode
-- [ ] Custom room settings (time, rounds, radius)
+### Mobile App Issues
+
+**Issue: Can't connect to backend**
+- Update `EXPO_PUBLIC_BACKEND_URL` in `.env`
+- Restart Expo dev server
+- Check if backend is accessible from mobile device
+
+**Issue: Touch drawing not working**
+- Ensure `touchAction: 'none'` is set
+- Check Canvas component implementation
+- Test on actual device (not just browser)
+
+## 📊 Performance Tips
+
+### Web App
+- Enable production build: `yarn build`
+- Use CDN for static assets
+- Enable gzip compression
+- Implement service worker for offline support
+
+### Backend
+- Use MongoDB indexes for queries
+- Enable connection pooling
+- Implement rate limiting
+- Use Redis for session storage (optional)
+
+## 🎨 Customization
+
+### Add New Words
+Edit `backend/server.js`:
+```javascript
+const WORD_BANK = [
+  ...existingWords,
+  'your', 'new', 'words'
+];
+```
+
+### Change Theme Colors
+Web: Edit `web-frontend/src/styles/*.css`
+Mobile: Edit `frontend/app/*.tsx` StyleSheet
+
+### Adjust Game Settings
+Edit `backend/server.js`:
+- `NEARBY_RADIUS_KM`: Search radius
+- `MAX_PLAYERS`: Room capacity
+- `MAX_ROUNDS`: Game length
+- `ROUND_DURATION`: Time per round
 
 ## 📄 License
 
 MIT License - Free to use and modify!
 
-## 👨‍💻 Credits
+## 🤝 Contributing
 
-Built with ❤️ using modern web & mobile technologies.
+Contributions welcome! Please:
+1. Fork the repository
+2. Create feature branch
+3. Commit changes
+4. Push to branch
+5. Open Pull Request
+
+## 📞 Support
+
+For issues or questions:
+- Open GitHub issue
+- Check existing documentation
+- Review troubleshooting section
+
+## 🎉 Credits
+
+Built with modern web & mobile technologies:
+- React / React Native
+- Socket.IO for real-time communication
+- Node.js + Express
+- MongoDB
+- Vite for fast development
+- TypeScript for type safety
 
 ---
 
-**Tech Stack Summary:**
-- 📱 Expo + React Native + TypeScript
-- 🔌 Socket.IO (Real-time bidirectional communication)
-- 🌐 Node.js + Express.js
-- 🗄️ MongoDB
-- 📍 GPS Location Services (expo-location)
-- 🎨 SVG Drawing (react-native-svg)
+**Made with ❤️ for drawing and guessing enthusiasts!**
+
+## Quick Start Summary
+
+### Web Version (Fastest)
+```bash
+# Terminal 1 - Backend
+cd backend && npm install && npm start
+
+# Terminal 2 - Web Frontend
+cd web-frontend && yarn install && yarn dev
+
+# Open browser: http://localhost:3000
+```
+
+### Mobile Version
+```bash
+# Terminal 1 - Backend
+cd backend && npm install && npm start
+
+# Terminal 2 - Mobile Frontend
+cd frontend && yarn install && yarn start
+
+# Scan QR code with Expo Go app
+```
+
+That's it! Start drawing and guessing! 🎨
