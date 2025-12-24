@@ -106,8 +106,7 @@ export default function HomeScreen() {
     setLocation(userLocation);
 
     // Connect to Socket.IO
-    const socketUrl = backendUrl.replace('/api', '');
-    const newSocket = io(socketUrl.includes('localhost') ? socketUrl : `${backendUrl}/api`, {
+    const newSocket = io(backendUrl, {
       path: '/api/socket.io',
       transports: ['polling', 'websocket'],
       reconnection: true,
