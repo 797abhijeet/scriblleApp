@@ -339,10 +339,10 @@ export default function GameScreen() {
         </ScrollView>
       </View>
 
-      {/* Canvas and Chat - Side by Side Layout */}
-      <View style={styles.mainContent}>
+      {/* Canvas and Chat - Responsive Layout */}
+      <View style={[styles.mainContent, isMobile && styles.mainContentMobile]}>
         {/* Canvas */}
-        <View style={styles.canvasContainer}>
+        <View style={[styles.canvasContainer, isMobile && styles.canvasContainerMobile]}>
           {gameStarted ? (
             <>
               {isDrawer && (
@@ -397,13 +397,15 @@ export default function GameScreen() {
           )}
         </View>
 
-        {/* Chat Sidebar */}
+        {/* Chat - Sidebar on desktop, bottom on mobile */}
         {gameStarted && (
-          <View style={styles.chatSidebar}>
-            <View style={styles.chatHeader}>
-              <Ionicons name="chatbubbles" size={20} color="#6366f1" />
-              <Text style={styles.chatHeaderText}>Chat</Text>
-            </View>
+          <View style={[styles.chatSidebar, isMobile && styles.chatMobile]}>
+            {!isMobile && (
+              <View style={styles.chatHeader}>
+                <Ionicons name="chatbubbles" size={20} color="#6366f1" />
+                <Text style={styles.chatHeaderText}>Chat</Text>
+              </View>
+            )}
             
             <ScrollView
               ref={scrollViewRef}
