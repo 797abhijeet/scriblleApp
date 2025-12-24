@@ -37,6 +37,8 @@ export default function GameScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
   const { username, roomCode, isHost } = params;
+  const { width: windowWidth } = useWindowDimensions();
+  const isMobile = windowWidth < 768; // Mobile if width < 768px
 
   const [socket, setSocket] = useState<Socket | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
