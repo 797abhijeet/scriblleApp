@@ -343,11 +343,7 @@ io.on('connection', (socket) => {
       return;
     }
     
-    if (room.gameStarted) {
-      socket.emit('error', { message: 'Game already started' });
-      return;
-    }
-    
+    // Allow joining even if game started - they can join mid-game
     room.players.push({ sid: socket.id, username, score: 0, isHost: false });
     
     socket.join(roomCode);
@@ -359,6 +355,30 @@ io.on('connection', (socket) => {
     io.to(roomCode).emit('player_joined', { players: room.players });
     
     console.log(`👤 ${username} joined room ${roomCode}`);
+    
+    // If game already started, send current game state to new player
+    if (room.gameStarted) {
+      socket.emit('game_started', {});
+      
+      // Send current round info
+      const drawer = room.players.find(p => p.sid === room.currentDrawerSid);
+      if (drawer) {
+        socket.emit('new_round', {
+          round: room.currentRound,
+          drawer: drawer.username,
+          drawerSid: drawer.sid,
+          word: '_'.repeat(room.currentWord ? room.currentWord.length : 0),
+          wordLength: room.currentWord ? room.currentWord.length : 0
+        });
+        
+        // Send all existing strokes to new player
+        room.strokes.forEach(stroke => {
+          socket.emit('stroke_drawn', stroke);
+        });
+      }
+      
+      console.log(`🎮 ${username} joined game in progress in room ${roomCode}`);
+    }
   });
   
   // Start game
