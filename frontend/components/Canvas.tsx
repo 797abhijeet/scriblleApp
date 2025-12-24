@@ -24,6 +24,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ canDraw, onStrokeSent }, re
   const currentStrokeRef = useRef<{ x: number; y: number }[]>([]);
   const isDrawing = useRef(false);
   const svgRef = useRef<any>(null);
+  const canvasSizeRef = useRef({ width: 0, height: 0 });
 
   useImperativeHandle(ref, () => ({
     clear: () => {
@@ -32,9 +33,29 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ canDraw, onStrokeSent }, re
       currentStrokeRef.current = [];
     },
     drawStroke: (stroke: Stroke) => {
-      setStrokes((prev) => [...prev, stroke]);
+      // Denormalize coordinates based on current canvas size
+      const denormalizedStroke = {
+        ...stroke,
+        points: stroke.points.map(p => ({
+          x: p.x * canvasSizeRef.current.width,
+          y: p.y * canvasSizeRef.current.height
+        }))
+      };
+      setStrokes((prev) => [...prev, denormalizedStroke]);
     },
   }));
+
+  const handleLayout = (event: any) => {
+    const { width, height } = event.nativeEvent.layout;
+    canvasSizeRef.current = { width, height };
+  };
+
+  const normalizePoint = (x: number, y: number) => {
+    return {
+      x: x / canvasSizeRef.current.width,
+      y: y / canvasSizeRef.current.height
+    };
+  };
 
   const handleMouseDown = (e: any) => {
     if (!canDraw) return;
@@ -65,13 +86,25 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ canDraw, onStrokeSent }, re
     isDrawing.current = false;
     
     if (currentStrokeRef.current.length > 0) {
+      // Normalize coordinates before sending
+      const normalizedPoints = currentStrokeRef.current.map(p => 
+        normalizePoint(p.x, p.y)
+      );
+      
       const newStroke: Stroke = {
-        points: currentStrokeRef.current,
+        points: normalizedPoints,
         color: '#000000',
         width: 3,
       };
       
-      setStrokes((prev) => [...prev, newStroke]);
+      // Store denormalized for local display
+      const localStroke = {
+        ...newStroke,
+        points: currentStrokeRef.current
+      };
+      setStrokes((prev) => [...prev, localStroke]);
+      
+      // Send normalized coordinates
       onStrokeSent(newStroke);
     }
     
@@ -82,7 +115,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ canDraw, onStrokeSent }, re
   const handleTouchStart = (e: any) => {
     if (!canDraw) return;
     
-    e.preventDefault(); // Prevent scrolling
+    e.preventDefault();
     isDrawing.current = true;
     const touch = e.touches[0] || e.changedTouches[0];
     const rect = e.currentTarget.getBoundingClientRect();
@@ -96,7 +129,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ canDraw, onStrokeSent }, re
   const handleTouchMove = (e: any) => {
     if (!canDraw || !isDrawing.current) return;
     
-    e.preventDefault(); // Prevent scrolling while drawing
+    e.preventDefault();
     const touch = e.touches[0] || e.changedTouches[0];
     const rect = e.currentTarget.getBoundingClientRect();
     const x = touch.clientX - rect.left;
@@ -113,13 +146,25 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ canDraw, onStrokeSent }, re
     isDrawing.current = false;
     
     if (currentStrokeRef.current.length > 0) {
+      // Normalize coordinates before sending
+      const normalizedPoints = currentStrokeRef.current.map(p => 
+        normalizePoint(p.x, p.y)
+      );
+      
       const newStroke: Stroke = {
-        points: currentStrokeRef.current,
+        points: normalizedPoints,
         color: '#000000',
         width: 3,
       };
       
-      setStrokes((prev) => [...prev, newStroke]);
+      // Store denormalized for local display
+      const localStroke = {
+        ...newStroke,
+        points: currentStrokeRef.current
+      };
+      setStrokes((prev) => [...prev, localStroke]);
+      
+      // Send normalized coordinates
       onStrokeSent(newStroke);
     }
     
@@ -142,6 +187,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ canDraw, onStrokeSent }, re
   return (
     <View 
       style={styles.container}
+      onLayout={handleLayout}
       onStartShouldSetResponder={() => true}
       onMoveShouldSetResponder={() => true}
     >
@@ -193,7 +239,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#ffffff',
     // @ts-ignore - web-specific touch handling
-    touchAction: 'none', // Prevents scrolling/zooming on touch
+    touchAction: 'none',
+    minHeight: 400, // Ensure minimum height
   },
   svg: {
     backgroundColor: '#ffffff',
