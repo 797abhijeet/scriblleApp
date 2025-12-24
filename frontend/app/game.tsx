@@ -54,12 +54,15 @@ export default function GameScreen() {
 
   useEffect(() => {
     // Connect to Socket.IO server
-    const socketUrl = backendUrl.replace('/api', '');
+    // Use /api path which is properly routed to backend
+    const socketUrl = backendUrl.includes('localhost') ? backendUrl : `${backendUrl}/api`;
     const newSocket = io(socketUrl, {
-      transports: ['websocket', 'polling'],
+      path: '/socket.io',
+      transports: ['polling', 'websocket'], // Try polling first
       reconnection: true,
-      reconnectionAttempts: 5,
+      reconnectionAttempts: 10,
       reconnectionDelay: 1000,
+      forceNew: true,
     });
 
     newSocket.on('connect', () => {
