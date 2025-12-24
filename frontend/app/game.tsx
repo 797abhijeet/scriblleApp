@@ -324,13 +324,20 @@ export default function GameScreen() {
           <>
             {isDrawer && (
               <View style={styles.wordDisplay}>
-                <Text style={styles.wordText}>Draw: {currentWord}</Text>
+                <Text style={styles.wordText}>✏️ Draw: {currentWord}</Text>
               </View>
             )}
             {!isDrawer && currentWord && (
               <View style={styles.wordDisplay}>
                 <Text style={styles.wordText}>
-                  Word: {currentWord.replace(/./g, '_ ')}
+                  🔍 Word: {currentWord.replace(/./g, '_ ')}
+                </Text>
+              </View>
+            )}
+            {isDrawer && (
+              <View style={styles.drawingInstructions}>
+                <Text style={styles.instructionText}>
+                  👆 Touch and drag to draw
                 </Text>
               </View>
             )}
