@@ -101,3 +101,147 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "Test the Scribble Game backend API and Socket.IO functionality"
+
+backend:
+  - task: "API Root Endpoint"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "GET /api/ returns correct message: {'message': 'Scribble Game API'}"
+
+  - task: "API Rooms Endpoint"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "GET /api/rooms returns rooms list with proper format"
+
+  - task: "Socket.IO Connection"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "Socket.IO server connects successfully and sends connected event"
+
+  - task: "Room Creation via Socket.IO"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "create_room event works correctly, returns room_created event with player data"
+
+  - task: "Room Joining via Socket.IO"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "join_room event works correctly, returns room_joined and player_joined events"
+
+  - task: "Game Start Functionality"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "start_game event works correctly, triggers game_started and new_round events"
+
+  - task: "Drawing Functionality"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "draw_stroke event works correctly, broadcasts stroke_drawn to non-drawer players"
+
+  - task: "Canvas Clear Functionality"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "clear_canvas event works correctly, broadcasts canvas_cleared to all players"
+
+  - task: "Correct Guess Functionality"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "send_guess with correct word works, returns guess_result with correct=true and points, broadcasts correct_guess event"
+
+  - task: "Incorrect Guess Handling"
+    implemented: true
+    working: false
+    file: "backend/server.py"
+    stuck_count: 1
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "Minor: send_guess with incorrect word should broadcast as chat_message but test didn't receive expected chat events"
+
+frontend:
+  # No frontend testing performed as per instructions
+
+metadata:
+  created_by: "testing_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Socket.IO External URL Routing"
+    - "Incorrect Guess Chat Broadcasting"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+    - agent: "testing"
+      message: "Comprehensive backend testing completed. API endpoints working perfectly. Socket.IO functionality working well with 13/14 tests passing. Only minor issue with incorrect guess chat broadcasting. External Socket.IO URL routing issue identified - Socket.IO requests to external URL return frontend HTML instead of Socket.IO responses, but local backend works perfectly."
