@@ -19,8 +19,8 @@ logger = logging.getLogger(__name__)
 # Backend URL from environment
 BACKEND_URL = "https://scribbly-draw.preview.emergentagent.com"
 API_BASE = f"{BACKEND_URL}/api"
-# Use local backend for Socket.IO since external routing has issues
-SOCKET_URL = "http://localhost:8001"
+# Use external URL for Socket.IO testing as per user request
+SOCKET_URL = BACKEND_URL
 
 class TestResults:
     def __init__(self):
