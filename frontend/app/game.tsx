@@ -113,8 +113,8 @@ export default function GameScreen() {
       console.log('New round:', data);
       setCurrentRound(data.round);
       setCurrentWord(data.word);
-      setIsDrawer(data.drawer_sid === newSocket.id);
-      setCanDraw(data.drawer_sid === newSocket.id);
+      setIsDrawer(data.drawerSid === newSocket.id);
+      setCanDraw(data.drawerSid === newSocket.id);
       setTimeLeft(60);
       
       if (canvasRef.current) {
