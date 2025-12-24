@@ -544,14 +544,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#10b981',
   },
+  mainContent: {
+    flex: 1,
+    flexDirection: 'row',
+  },
   canvasContainer: {
     flex: 1,
     backgroundColor: 'white',
     margin: 8,
-    marginBottom: 4, // Less margin at bottom to give more space
+    marginRight: 4,
     borderRadius: 12,
     overflow: 'hidden',
-    minHeight: 400, // Ensure minimum height for drawing
+    minHeight: 400,
   },
   wordDisplay: {
     backgroundColor: '#6366f1',
