@@ -94,9 +94,16 @@ function findNearbyPlayer(currentPlayerId, lat, lng) {
 // Helper: Start new round
 async function startNewRound(roomCode) {
   const room = gameRooms.get(roomCode);
-  if (!room) return;
+  if (!room || !room.players || room.players.length === 0) return;
+  
+  // Ensure drawer index is valid
+  if (room.currentDrawerIndex >= room.players.length) {
+    room.currentDrawerIndex = 0;
+  }
   
   const drawer = room.players[room.currentDrawerIndex];
+  if (!drawer) return;
+  
   room.currentDrawerSid = drawer.sid;
   room.currentWord = WORD_BANK[Math.floor(Math.random() * WORD_BANK.length)];
   room.strokes = [];
