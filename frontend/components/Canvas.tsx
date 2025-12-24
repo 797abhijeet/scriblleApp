@@ -1,8 +1,6 @@
 import React, { useRef, useState, forwardRef, useImperativeHandle } from 'react';
-import { View, StyleSheet, PanResponder, Dimensions } from 'react-native';
+import { View, StyleSheet, PanResponder, Platform } from 'react-native';
 import Svg, { Path, G } from 'react-native-svg';
-
-const { width, height } = Dimensions.get('window');
 
 interface Stroke {
   points: { x: number; y: number }[];
@@ -24,6 +22,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ canDraw, onStrokeSent }, re
   const [strokes, setStrokes] = useState<Stroke[]>([]);
   const [currentStroke, setCurrentStroke] = useState<{ x: number; y: number }[]>([]);
   const currentStrokeRef = useRef<{ x: number; y: number }[]>([]);
+  const containerRef = useRef<View>(null);
 
   useImperativeHandle(ref, () => ({
     clear: () => {
@@ -36,6 +35,33 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ canDraw, onStrokeSent }, re
     },
   }));
 
+  const getRelativePosition = (evt: any) => {
+    // For web, use pageX/pageY and calculate relative to container
+    if (Platform.OS === 'web') {
+      const nativeEvent = evt.nativeEvent;
+      // Use pageX/pageY for web
+      const x = nativeEvent.pageX || nativeEvent.clientX || 0;
+      const y = nativeEvent.pageY || nativeEvent.clientY || 0;
+      
+      // Get container position
+      if (containerRef.current) {
+        // @ts-ignore - web-specific
+        const rect = containerRef.current.getBoundingClientRect?.();
+        if (rect) {
+          return {
+            x: x - rect.left,
+            y: y - rect.top
+          };
+        }
+      }
+      return { x, y };
+    } else {
+      // For native, use locationX/locationY
+      const { locationX, locationY } = evt.nativeEvent;
+      return { x: locationX || 0, y: locationY || 0 };
+    }
+  };
+
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => canDraw,
@@ -43,16 +69,16 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ canDraw, onStrokeSent }, re
       onPanResponderGrant: (evt) => {
         if (!canDraw) return;
         
-        const { locationX, locationY } = evt.nativeEvent;
-        const newPoint = { x: locationX, y: locationY };
+        const pos = getRelativePosition(evt);
+        const newPoint = { x: pos.x, y: pos.y };
         currentStrokeRef.current = [newPoint];
         setCurrentStroke([newPoint]);
       },
       onPanResponderMove: (evt) => {
         if (!canDraw) return;
         
-        const { locationX, locationY } = evt.nativeEvent;
-        const newPoint = { x: locationX, y: locationY };
+        const pos = getRelativePosition(evt);
+        const newPoint = { x: pos.x, y: pos.y };
         currentStrokeRef.current = [...currentStrokeRef.current, newPoint];
         setCurrentStroke([...currentStrokeRef.current]);
       },
@@ -87,7 +113,11 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ canDraw, onStrokeSent }, re
   };
 
   return (
-    <View style={styles.container} {...panResponder.panHandlers}>
+    <View 
+      ref={containerRef}
+      style={styles.container} 
+      {...panResponder.panHandlers}
+    >
       <Svg width="100%" height="100%" style={styles.svg}>
         <G>
           {strokes.map((stroke, index) => (
@@ -123,6 +153,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#ffffff',
+    cursor: 'crosshair',
   },
   svg: {
     backgroundColor: '#ffffff',
