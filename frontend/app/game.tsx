@@ -147,6 +147,7 @@ export default function GameScreen() {
     });
 
     newSocket.on('stroke_drawn', (data) => {
+      console.log('Received stroke:', data);
       if (canvasRef.current && !isDrawer) {
         canvasRef.current.drawStroke(data);
       }
