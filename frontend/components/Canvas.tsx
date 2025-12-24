@@ -82,8 +82,9 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ canDraw, onStrokeSent }, re
   const handleTouchStart = (e: any) => {
     if (!canDraw) return;
     
+    e.preventDefault(); // Prevent scrolling
     isDrawing.current = true;
-    const touch = e.touches[0];
+    const touch = e.touches[0] || e.changedTouches[0];
     const rect = e.currentTarget.getBoundingClientRect();
     const x = touch.clientX - rect.left;
     const y = touch.clientY - rect.top;
@@ -95,8 +96,8 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ canDraw, onStrokeSent }, re
   const handleTouchMove = (e: any) => {
     if (!canDraw || !isDrawing.current) return;
     
-    e.preventDefault();
-    const touch = e.touches[0];
+    e.preventDefault(); // Prevent scrolling while drawing
+    const touch = e.touches[0] || e.changedTouches[0];
     const rect = e.currentTarget.getBoundingClientRect();
     const x = touch.clientX - rect.left;
     const y = touch.clientY - rect.top;
@@ -105,9 +106,10 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ canDraw, onStrokeSent }, re
     setCurrentStroke([...currentStrokeRef.current]);
   };
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = (e: any) => {
     if (!canDraw || !isDrawing.current) return;
     
+    e.preventDefault();
     isDrawing.current = false;
     
     if (currentStrokeRef.current.length > 0) {
