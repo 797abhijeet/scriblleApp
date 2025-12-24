@@ -57,7 +57,7 @@ export default function GameScreen() {
     // Use /api path which is properly routed to backend
     const socketUrl = backendUrl.includes('localhost') ? backendUrl : `${backendUrl}/api`;
     const newSocket = io(socketUrl, {
-      path: '/socket.io',
+      path: '/api/socket.io',
       transports: ['polling', 'websocket'], // Try polling first
       reconnection: true,
       reconnectionAttempts: 10,
