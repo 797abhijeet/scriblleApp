@@ -12,11 +12,10 @@ export default function HomePage() {
   const [socket, setSocket] = useState<Socket | null>(null)
   const navigate = useNavigate()
 
-   const backendUrl =
+  const backendUrl =
     window.location.hostname === 'localhost'
       ? 'http://localhost:8001'
       : 'https://your-backend.onrender.com';
-
   useEffect(() => {
     // Request location permission on mount
     if (navigator.geolocation) {
@@ -94,7 +93,7 @@ export default function HomePage() {
 
         newSocket.on('connect', () => {
           console.log('Connected to server for nearby search')
-          
+
           newSocket.emit('find_nearby_match', {
             lat: userLocation.lat,
             lng: userLocation.lng,
@@ -109,11 +108,11 @@ export default function HomePage() {
         newSocket.on('match_found', (data) => {
           console.log('Match found!', data)
           setSearchingNearby(false)
-          
+
           const confirmed = window.confirm(
             `Match found with ${data.matchedWith} (${data.distance}km away). Join game?`
           )
-          
+
           if (confirmed) {
             newSocket.disconnect()
             navigate(`/game?username=${username}&roomCode=${data.roomCode}&isHost=false&matchType=nearby`)
@@ -159,7 +158,7 @@ export default function HomePage() {
                 📍 Your location: {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
               </p>
             )}
-            
+
             <button className="cancel-button" onClick={handleCancelSearch}>
               Cancel Search
             </button>
@@ -265,11 +264,11 @@ export default function HomePage() {
           <button
             className="primary-button"
             onClick={
-              mode === 'create' 
-                ? handleCreateRoom 
-                : mode === 'nearby' 
-                ? handleFindNearby 
-                : handleJoinRoom
+              mode === 'create'
+                ? handleCreateRoom
+                : mode === 'nearby'
+                  ? handleFindNearby
+                  : handleJoinRoom
             }
           >
             {mode === 'create' ? 'Create Room' : mode === 'nearby' ? 'Find Match' : 'Join Room'}
