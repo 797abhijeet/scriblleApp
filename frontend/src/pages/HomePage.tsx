@@ -15,7 +15,8 @@ export default function HomePage() {
   const backendUrl =
     window.location.hostname === 'localhost'
       ? 'http://localhost:8001'
-      : 'https://your-backend.onrender.com';
+      : 'https://scriblleapp.onrender.com'
+
 
   useEffect(() => {
     // Request location permission on mount

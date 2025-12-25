@@ -39,15 +39,15 @@ export default function GamePage() {
   const timerRef = useRef<any>(null)
 
   const backendUrl =
-    window.location.hostname === 'localhost'
-      ? 'http://localhost:8001'
-      : 'https://scriblleapp.onrender.com';
+  window.location.hostname === 'localhost'
+    ? 'http://localhost:8001'
+    : 'https://scriblleapp.onrender.com'
+
 
   useEffect(() => {
     const socket = io(backendUrl, {
       transports: ['websocket'],
       upgrade: false,
-      reconnection: true,
     })
 
 
