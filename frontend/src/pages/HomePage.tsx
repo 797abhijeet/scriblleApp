@@ -66,75 +66,69 @@ export default function HomePage() {
   }
 
   const handleFindNearby = () => {
-    if (!username.trim()) {
-      alert('Please enter a username')
-      return
-    }
-
-    if (!navigator.geolocation) {
-      alert('Geolocation is not supported by your browser')
-      return
-    }
-
-    setSearchingNearby(true)
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const userLocation = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        }
-        setLocation(userLocation)
-
-        // Connect to Socket.IO
-        const newSocket = io(backendUrl, {
-          path: '/api/socket.io',
-          transports: ['polling', 'websocket'],
-          reconnection: true,
-        })
-
-        newSocket.on('connect', () => {
-          console.log('Connected to server for nearby search')
-
-          newSocket.emit('find_nearby_match', {
-            lat: userLocation.lat,
-            lng: userLocation.lng,
-            username: username
-          })
-        })
-
-        newSocket.on('searching', (data) => {
-          console.log('Searching for nearby players:', data.message)
-        })
-
-        newSocket.on('match_found', (data) => {
-          console.log('Match found!', data)
-          setSearchingNearby(false)
-
-          const confirmed = window.confirm(
-            `Match found with ${data.matchedWith} (${data.distance}km away). Join game?`
-          )
-
-          if (confirmed) {
-            newSocket.disconnect()
-            navigate(`/game?username=${username}&roomCode=${data.roomCode}&isHost=false&matchType=nearby`)
-          }
-        })
-
-        newSocket.on('error', (data) => {
-          setSearchingNearby(false)
-          alert(data.message)
-          newSocket.disconnect()
-        })
-
-        setSocket(newSocket)
-      },
-      () => {
-        setSearchingNearby(false)
-        alert('Please enable location access to find nearby players')
-      }
-    )
+  if (!username.trim()) {
+    alert('Please enter a username')
+    return
   }
+
+  if (!navigator.geolocation) {
+    alert('Geolocation not supported')
+    return
+  }
+
+  setSearchingNearby(true)
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const userLocation = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude
+      }
+
+      const newSocket = io(backendUrl, {
+        transports: ['websocket'],
+        upgrade: false,
+      })
+
+      newSocket.on('connect', () => {
+        newSocket.emit('find_nearby_match', {
+          lat: userLocation.lat,
+          lng: userLocation.lng,
+          username
+        })
+      })
+
+      newSocket.on('searching', () => {
+        console.log('🔍 Searching nearby...')
+      })
+
+      newSocket.on('match_found', (data) => {
+        setSearchingNearby(false)
+
+        const confirmed = window.confirm(
+          `Match found with ${data.matchedWith} (${data.distance} km away). Join game?`
+        )
+
+        if (confirmed) {
+          newSocket.disconnect()
+          navigate(`/game?username=${username}&roomCode=${data.roomCode}&isHost=false`)
+        }
+      })
+
+      newSocket.on('error', (err) => {
+        setSearchingNearby(false)
+        alert(err.message)
+        newSocket.disconnect()
+      })
+
+      setSocket(newSocket)
+    },
+    () => {
+      setSearchingNearby(false)
+      alert('Location permission required')
+    }
+  )
+}
 
   const handleCancelSearch = () => {
     if (socket) {
