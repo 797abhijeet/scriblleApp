@@ -53,8 +53,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(
         ctx.setTransform(ratio, 0, 0, ratio, 0, 0)
         ctx.lineCap = 'round'
         ctx.lineJoin = 'round'
-        ctx.strokeStyle = '#000'
-        ctx.lineWidth = 3
 
         contextRef.current = ctx
         canvasSizeRef.current = {
@@ -121,13 +119,11 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(
       e.preventDefault()
 
       const { x, y } = getPos(e)
-
       strokeRef.current = [{ x, y }]
       setIsDrawing(true)
 
-      const ctx = contextRef.current
-      ctx?.beginPath()
-      ctx?.moveTo(x, y)
+      contextRef.current?.beginPath()
+      contextRef.current?.moveTo(x, y)
     }
 
     const draw = (e: any) => {
@@ -135,12 +131,10 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(
       e.preventDefault()
 
       const { x, y } = getPos(e)
-
       strokeRef.current.push({ x, y })
 
-      const ctx = contextRef.current
-      ctx?.lineTo(x, y)
-      ctx?.stroke()
+      contextRef.current?.lineTo(x, y)
+      contextRef.current?.stroke()
     }
 
     const stopDrawing = (e?: any) => {
@@ -148,7 +142,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(
       e?.preventDefault()
 
       setIsDrawing(false)
-
       if (strokeRef.current.length === 0) return
 
       const normalized = strokeRef.current.map(p => ({
@@ -156,10 +149,11 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(
         y: p.y / canvasSizeRef.current.height,
       }))
 
+      // 🔥 DO NOT HARD-CODE COLOR OR WIDTH
       onStrokeSent({
         points: normalized,
-        color: '#000',
-        width: 3,
+        color: contextRef.current?.strokeStyle as string,
+        width: contextRef.current?.lineWidth || 3,
       })
 
       strokeRef.current = []
@@ -168,7 +162,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(
     return (
       <canvas
         ref={canvasRef}
-        className="drawing-canvas"
+        className="drawing-canvas" // ✅ SAME AS BEFORE
         onMouseDown={startDrawing}
         onMouseMove={draw}
         onMouseUp={stopDrawing}
