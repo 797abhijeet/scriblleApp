@@ -292,17 +292,17 @@ export default function GamePage() {
             <>
               {isDrawer && (
                 <div className="word-display drawer">
-                  ✏️ Draw: {currentWord}
+                  Draw: {currentWord}
                 </div>
               )}
               {!isDrawer && currentWord && (
                 <div className="word-display guesser">
-                  🔍 Word: {currentWord.replace(/./g, '_ ')}
+                  Word: {currentWord.replace(/./g, '_ ')}
                 </div>
               )}
               {isDrawer && (
                 <div className="drawing-instructions">
-                  👆 Click and drag to draw
+                  👆Click and drag to draw
                 </div>
               )}
               <Canvas

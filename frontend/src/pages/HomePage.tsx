@@ -241,7 +241,7 @@ export default function HomePage() {
 
           {mode === 'join' && (
             <div className="input-container">
-              <span className="input-icon">🔑</span>
+             
               <input
                 className="input"
                 type="text"
