@@ -20,7 +20,7 @@ interface Message {
 export default function GamePage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  
+
   const username = searchParams.get('username') || ''
   const roomCode = searchParams.get('roomCode') || ''
   const isHost = searchParams.get('isHost') === 'true'
@@ -38,7 +38,10 @@ export default function GamePage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<any>(null)
 
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8001'
+  const backendUrl =
+    window.location.hostname === 'localhost'
+      ? 'http://localhost:8001'
+      : 'https://your-backend.onrender.com';
 
   useEffect(() => {
     const newSocket = io(backendUrl, {
@@ -49,7 +52,7 @@ export default function GamePage() {
 
     newSocket.on('connect', () => {
       console.log('Connected to server')
-      
+
       if (isHost) {
         newSocket.emit('create_room', {
           room_code: roomCode,
@@ -94,7 +97,7 @@ export default function GamePage() {
       setCurrentWord(data.word)
       setIsDrawer(data.drawerSid === newSocket.id)
       setTimeLeft(60)
-      
+
       if (canvasRef.current) {
         canvasRef.current.clear()
       }
@@ -324,7 +327,7 @@ export default function GamePage() {
               <span className="chat-icon">💬</span>
               <span className="chat-title">Chat</span>
             </div>
-            
+
             <div className="messages-list">
               {messages.map((msg, index) => (
                 <div
