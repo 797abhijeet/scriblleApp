@@ -1,28 +1,48 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
+/* ==========================
+   Player Schema
+========================== */
 const PlayerSchema = new mongoose.Schema({
-  sid: String,
-  username: String,
+  sid: { type: String, required: true },
+  username: { type: String, required: true },
   score: { type: Number, default: 0 },
-  isHost: Boolean
+  isHost: { type: Boolean, default: false },
 });
 
-const RoomSchema = new mongoose.Schema({
-  roomCode: { type: String, unique: true },
-  players: [PlayerSchema],
-  maxPlayers: { type: Number, default: 8 },
+/* ==========================
+   Room Schema
+========================== */
+const RoomSchema = new mongoose.Schema(
+  {
+    roomCode: { type: String, unique: true, required: true },
 
-  gameStarted: { type: Boolean, default: false },
-  currentRound: { type: Number, default: 0 },
-  maxRounds: { type: Number, default: 3 },
+    players: [PlayerSchema],
+    maxPlayers: { type: Number, default: 8 },
 
-  currentDrawerIndex: { type: Number, default: 0 },
-  currentDrawerSid: String,
-  currentWord: String,
+    /* ===== Game State ===== */
+    gameStarted: { type: Boolean, default: false },
 
-  strokes: { type: Array, default: [] },
-  guessedPlayers: { type: Array, default: [] },
-  roundStartTime: Number
-}, { timestamps: true });
+    currentRound: { type: Number, default: 0 },
+    maxRounds: { type: Number, default: 3 },
 
-module.exports = mongoose.model('Room', RoomSchema);
+    currentDrawerIndex: { type: Number, default: 0 },
+    currentDrawerSid: { type: String, default: null },
+
+    currentWord: { type: String, default: null },
+
+    /* ===== Drawing ===== */
+    strokes: { type: Array, default: [] },
+
+    /* ===== Guessing Control ===== */
+    guessedPlayers: { type: [String], default: [] },
+
+    // 🔐 Prevents multiple winners per round
+    roundActive: { type: Boolean, default: false },
+
+    roundStartTime: { type: Number, default: null },
+  },
+  { timestamps: true }
+);
+
+module.exports = mongoose.model("Room", RoomSchema);
