@@ -44,67 +44,67 @@ export default function GamePage() {
       : 'https://scriblleapp.onrender.com';
 
   useEffect(() => {
-    const newSocket = io(backendUrl, {
-      transports: ['websocket'], // REQUIRED for Render
+    const socket = io(backendUrl, {
+      transports: ['websocket'],
+      upgrade: false,
       reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
     })
 
 
-    newSocket.on('connect', () => {
+
+    socket.on('connect', () => {
       console.log('Connected to server')
 
       if (isHost) {
-        newSocket.emit('create_room', {
+        socket.emit('create_room', {
           room_code: roomCode,
           username: username,
         })
       } else {
-        newSocket.emit('join_room', {
+        socket.emit('join_room', {
           room_code: roomCode,
           username: username,
         })
       }
     })
 
-    newSocket.on('room_created', (data) => {
+    socket.on('room_created', (data) => {
       setPlayers(data.players)
       addSystemMessage(`Room ${roomCode} created!`)
     })
 
-    newSocket.on('room_joined', (data) => {
+    socket.on('room_joined', (data) => {
       setPlayers(data.players)
       addSystemMessage(`Joined room ${roomCode}!`)
     })
 
-    newSocket.on('player_joined', (data) => {
+    socket.on('player_joined', (data) => {
       setPlayers(data.players)
       addSystemMessage('A player joined the room')
     })
 
-    newSocket.on('player_left', (data) => {
+    socket.on('player_left', (data) => {
       setPlayers(data.players)
       addSystemMessage('A player left the room')
     })
 
-    newSocket.on('game_started', () => {
+    socket.on('game_started', () => {
       setGameStarted(true)
       addSystemMessage('Game started! Get ready to draw and guess!')
     })
 
-    newSocket.on('new_round', (data) => {
+    socket.on('new_round', (data) => {
       console.log('New round:', data)
       setCurrentRound(data.round)
       setCurrentWord(data.word)
-      setIsDrawer(data.drawerSid === newSocket.id)
+      setIsDrawer(data.drawerSid === socket.id)
       setTimeLeft(60)
 
       if (canvasRef.current) {
         canvasRef.current.clear()
       }
 
-      if (data.drawerSid === newSocket.id) {
+      if (data.drawerSid === socket.id) {
         addSystemMessage(`Your turn! Draw: ${data.word}`)
       } else {
         addSystemMessage(`${data.drawer} is drawing...`)
@@ -124,34 +124,34 @@ export default function GamePage() {
       }, 1000)
     })
 
-    newSocket.on('stroke_drawn', (data) => {
+    socket.on('stroke_drawn', (data) => {
       console.log('Received stroke from server:', data)
       if (canvasRef.current) {
         canvasRef.current.drawStroke(data)
       }
     })
 
-    newSocket.on('canvas_cleared', () => {
+    socket.on('canvas_cleared', () => {
       if (canvasRef.current) {
         canvasRef.current.clear()
       }
     })
 
-    newSocket.on('correct_guess', (data) => {
+    socket.on('correct_guess', (data) => {
       addSystemMessage(`${data.player} guessed correctly! +${data.points} points`, 'correct')
     })
 
-    newSocket.on('guess_result', (data) => {
+    socket.on('guess_result', (data) => {
       if (data.correct) {
         addSystemMessage(`Correct! You earned ${data.points} points!`, 'correct')
       }
     })
 
-    newSocket.on('chat_message', (data) => {
+    socket.on('chat_message', (data) => {
       addMessage(data.username, data.message)
     })
 
-    newSocket.on('round_end', (data) => {
+    socket.on('round_end', (data) => {
       setPlayers(data.players)
       addSystemMessage(`Round ended! The word was: ${data.word}`, 'system')
       if (timerRef.current) {
@@ -159,7 +159,7 @@ export default function GamePage() {
       }
     })
 
-    newSocket.on('game_end', (data) => {
+    socket.on('game_end', (data) => {
       setPlayers(data.players)
       setGameStarted(false)
       const winner = data.players[0]
@@ -169,17 +169,17 @@ export default function GamePage() {
       }
     })
 
-    newSocket.on('error', (data) => {
+    socket.on('error', (data) => {
       alert(data.message)
     })
 
-    setSocket(newSocket)
+    setSocket(socket)
 
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current)
       }
-      newSocket.disconnect()
+      socket.disconnect()
     }
   }, [])
 
