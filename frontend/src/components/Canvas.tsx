@@ -5,6 +5,7 @@ import {
   useState,
   useEffect,
 } from 'react'
+import '../styles/Canvas.css'
 
 interface Stroke {
   points: { x: number; y: number }[]
@@ -25,105 +26,181 @@ export interface CanvasRef {
 const Canvas = forwardRef<CanvasRef, CanvasProps>(
   ({ canDraw, onStrokeSent }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null)
-    const ctxRef = useRef<CanvasRenderingContext2D | null>(null)
+    const contextRef = useRef<CanvasRenderingContext2D | null>(null)
 
-    const [drawing, setDrawing] = useState(false)
-    const [stroke, setStroke] = useState<{ x: number; y: number }[]>([])
-    const [color, setColor] = useState('#000000')
+    const [isDrawing, setIsDrawing] = useState(false)
+    const [currentStroke, setCurrentStroke] = useState<
+      { x: number; y: number }[]
+    >([])
 
+    const canvasSizeRef = useRef({ width: 0, height: 0 })
+
+    /* ======================
+       Setup + Resize
+    ====================== */
     useEffect(() => {
       const canvas = canvasRef.current
       if (!canvas) return
-      canvas.width = canvas.offsetWidth
-      canvas.height = canvas.offsetHeight
-      const ctx = canvas.getContext('2d')
-      if (ctx) {
-        ctx.lineCap = 'round'
-        ctx.lineJoin = 'round'
-        ctx.lineWidth = 3
-        ctxRef.current = ctx
+
+      const resizeCanvas = () => {
+        const container = canvas.parentElement
+        if (!container) return
+
+        canvas.width = container.clientWidth
+        canvas.height = container.clientHeight
+
+        canvasSizeRef.current = {
+          width: canvas.width,
+          height: canvas.height,
+        }
+
+        const ctx = canvas.getContext('2d')
+        if (ctx) {
+          ctx.lineCap = 'round'
+          ctx.lineJoin = 'round'
+          ctx.strokeStyle = '#000000'
+          ctx.lineWidth = 3
+          contextRef.current = ctx
+        }
       }
+
+      resizeCanvas()
+      window.addEventListener('resize', resizeCanvas)
+
+      return () => window.removeEventListener('resize', resizeCanvas)
     }, [])
 
+    /* ======================
+       Exposed Methods
+    ====================== */
     useImperativeHandle(ref, () => ({
       clear() {
-        const c = canvasRef.current
-        const ctx = ctxRef.current
-        if (c && ctx) ctx.clearRect(0, 0, c.width, c.height)
+        const canvas = canvasRef.current
+        const ctx = contextRef.current
+        if (canvas && ctx) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height)
+        }
       },
-      drawStroke(s: Stroke) {
-        const ctx = ctxRef.current
-        const c = canvasRef.current
-        if (!ctx || !c) return
-        ctx.strokeStyle = s.color
+
+      drawStroke(stroke: Stroke) {
+        const ctx = contextRef.current
+        if (!ctx || !canvasSizeRef.current.width) return
+
         ctx.beginPath()
-        s.points.forEach((p, i) => {
-          const x = p.x * c.width
-          const y = p.y * c.height
-          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
+        stroke.points.forEach((p, i) => {
+          const x = p.x * canvasSizeRef.current.width
+          const y = p.y * canvasSizeRef.current.height
+          if (i === 0) ctx.moveTo(x, y)
+          else ctx.lineTo(x, y)
         })
         ctx.stroke()
       },
     }))
 
-    const getPoint = (x: number, y: number) => {
-      const rect = canvasRef.current!.getBoundingClientRect()
-      return { x: x - rect.left, y: y - rect.top }
+    /* ======================
+       Helpers
+    ====================== */
+    const getPoint = (
+      clientX: number,
+      clientY: number
+    ): { x: number; y: number } | null => {
+      const rect = canvasRef.current?.getBoundingClientRect()
+      if (!rect) return null
+
+      return {
+        x: clientX - rect.left,
+        y: clientY - rect.top,
+      }
     }
 
     const start = (x: number, y: number) => {
       if (!canDraw) return
-      setDrawing(true)
-      setStroke([{ x, y }])
-      const ctx = ctxRef.current
-      ctx!.strokeStyle = color
-      ctx!.beginPath()
-      ctx!.moveTo(x, y)
+      setIsDrawing(true)
+      setCurrentStroke([{ x, y }])
+
+      const ctx = contextRef.current
+      ctx?.beginPath()
+      ctx?.moveTo(x, y)
     }
 
     const move = (x: number, y: number) => {
-      if (!drawing) return
-      setStroke((p) => [...p, { x, y }])
-      ctxRef.current!.lineTo(x, y)
-      ctxRef.current!.stroke()
+      if (!isDrawing || !canDraw) return
+
+      setCurrentStroke((prev) => [...prev, { x, y }])
+      const ctx = contextRef.current
+      ctx?.lineTo(x, y)
+      ctx?.stroke()
     }
 
     const end = () => {
-      if (!drawing) return
-      setDrawing(false)
+      if (!isDrawing || !canDraw) return
+      setIsDrawing(false)
 
-      const c = canvasRef.current!
-      onStrokeSent({
-        points: stroke.map((p) => ({
-          x: p.x / c.width,
-          y: p.y / c.height,
-        })),
-        color,
-        width: 3,
-      })
-      setStroke([])
+      if (currentStroke.length > 0) {
+        const { width, height } = canvasSizeRef.current
+
+        const normalized = currentStroke.map((p) => ({
+          x: p.x / width,
+          y: p.y / height,
+        }))
+
+        onStrokeSent({
+          points: normalized,
+          color: '#000000',
+          width: 3,
+        })
+      }
+
+      setCurrentStroke([])
+    }
+
+    /* ======================
+       Mouse Events
+    ====================== */
+    const onMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+      const p = getPoint(e.clientX, e.clientY)
+      if (p) start(p.x, p.y)
+    }
+
+    const onMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+      const p = getPoint(e.clientX, e.clientY)
+      if (p) move(p.x, p.y)
+    }
+
+    /* ======================
+       Touch Events (Mobile)
+    ====================== */
+    const onTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+      e.preventDefault()
+      const touch = e.touches[0]
+      const p = getPoint(touch.clientX, touch.clientY)
+      if (p) start(p.x, p.y)
+    }
+
+    const onTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+      e.preventDefault()
+      const touch = e.touches[0]
+      const p = getPoint(touch.clientX, touch.clientY)
+      if (p) move(p.x, p.y)
+    }
+
+    const onTouchEnd = (e: React.TouchEvent<HTMLCanvasElement>) => {
+      e.preventDefault()
+      end()
     }
 
     return (
-      <div className="relative w-full h-full">
-        {canDraw && (
-          <input
-            type="color"
-            value={color}
-            onChange={(e) => setColor(e.target.value)}
-            className="absolute top-2 left-2 z-10 w-8 h-8"
-          />
-        )}
-
-        <canvas
-          ref={canvasRef}
-          className="w-full h-full bg-white rounded-xl"
-          onMouseDown={(e) => start(e.clientX, e.clientY)}
-          onMouseMove={(e) => move(e.clientX, e.clientY)}
-          onMouseUp={end}
-          onMouseLeave={end}
-        />
-      </div>
+      <canvas
+        ref={canvasRef}
+        className="drawing-canvas"
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={end}
+        onMouseLeave={end}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      />
     )
   }
 )
