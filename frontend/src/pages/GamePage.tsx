@@ -39,72 +39,70 @@ export default function GamePage() {
   const timerRef = useRef<any>(null)
 
   const backendUrl =
-  window.location.hostname === 'localhost'
-    ? 'http://localhost:8001'
-    : 'https://scriblleapp.onrender.com'
-
+    window.location.hostname === 'localhost'
+      ? 'http://localhost:8001'
+      : 'https://scriblleapp.onrender.com';
 
   useEffect(() => {
-    const socket = io(backendUrl, {
-      transports: ['websocket'],
-      upgrade: false,
+    const newSocket = io(backendUrl, {
+      path: '/api/socket.io',
+      transports: ['polling', 'websocket'],
+      reconnection: true,
     })
 
-
-
-    socket.on('connect', () => {
+    newSocket.on('connect', () => {
       console.log('Connected to server')
 
       if (isHost) {
-        socket.emit('create_room', {
+        newSocket.emit('create_room', {
           room_code: roomCode,
           username: username,
         })
       } else {
-        socket.emit('join_room', {
+        newSocket.emit('join_room', {
           room_code: roomCode,
           username: username,
         })
       }
     })
 
-    socket.on('room_created', (data) => {
+    newSocket.on('room_created', (data) => {
       setPlayers(data.players)
       addSystemMessage(`Room ${roomCode} created!`)
     })
 
-    socket.on('room_joined', (data) => {
+    newSocket.on('room_joined', (data) => {
       setPlayers(data.players)
       addSystemMessage(`Joined room ${roomCode}!`)
     })
 
-    socket.on('player_joined', (data) => {
+    newSocket.on('player_joined', (data) => {
       setPlayers(data.players)
       addSystemMessage('A player joined the room')
     })
 
-    socket.on('player_left', (data) => {
+    newSocket.on('player_left', (data) => {
       setPlayers(data.players)
       addSystemMessage('A player left the room')
     })
 
-    socket.on('game_started', () => {
+    newSocket.on('game_started', () => {
       setGameStarted(true)
       addSystemMessage('Game started! Get ready to draw and guess!')
     })
 
-    socket.on('new_round', (data) => {
+    newSocket.on('new_round', (data) => {
       console.log('New round:', data)
       setCurrentRound(data.round)
       setCurrentWord(data.word)
-      setIsDrawer(data.drawerSid === socket.id)
+      setIsDrawer(data.drawerSid === newSocket.id)
       setTimeLeft(60)
 
       if (canvasRef.current) {
         canvasRef.current.clear()
       }
 
-      if (data.drawerSid === socket.id) {
+      if (data.drawerSid === newSocket.id) {
         addSystemMessage(`Your turn! Draw: ${data.word}`)
       } else {
         addSystemMessage(`${data.drawer} is drawing...`)
@@ -124,34 +122,34 @@ export default function GamePage() {
       }, 1000)
     })
 
-    socket.on('stroke_drawn', (data) => {
+    newSocket.on('stroke_drawn', (data) => {
       console.log('Received stroke from server:', data)
       if (canvasRef.current) {
         canvasRef.current.drawStroke(data)
       }
     })
 
-    socket.on('canvas_cleared', () => {
+    newSocket.on('canvas_cleared', () => {
       if (canvasRef.current) {
         canvasRef.current.clear()
       }
     })
 
-    socket.on('correct_guess', (data) => {
+    newSocket.on('correct_guess', (data) => {
       addSystemMessage(`${data.player} guessed correctly! +${data.points} points`, 'correct')
     })
 
-    socket.on('guess_result', (data) => {
+    newSocket.on('guess_result', (data) => {
       if (data.correct) {
         addSystemMessage(`Correct! You earned ${data.points} points!`, 'correct')
       }
     })
 
-    socket.on('chat_message', (data) => {
+    newSocket.on('chat_message', (data) => {
       addMessage(data.username, data.message)
     })
 
-    socket.on('round_end', (data) => {
+    newSocket.on('round_end', (data) => {
       setPlayers(data.players)
       addSystemMessage(`Round ended! The word was: ${data.word}`, 'system')
       if (timerRef.current) {
@@ -159,7 +157,7 @@ export default function GamePage() {
       }
     })
 
-    socket.on('game_end', (data) => {
+    newSocket.on('game_end', (data) => {
       setPlayers(data.players)
       setGameStarted(false)
       const winner = data.players[0]
@@ -169,17 +167,17 @@ export default function GamePage() {
       }
     })
 
-    socket.on('error', (data) => {
+    newSocket.on('error', (data) => {
       alert(data.message)
     })
 
-    setSocket(socket)
+    setSocket(newSocket)
 
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current)
       }
-      socket.disconnect()
+      newSocket.disconnect()
     }
   }, [])
 
