@@ -10,39 +10,42 @@ export default function HomePage() {
   const [searchingNearby, setSearchingNearby] = useState(false)
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [socket, setSocket] = useState<Socket | null>(null)
+
   const navigate = useNavigate()
 
-   const backendUrl =
+  const backendUrl =
     window.location.hostname === 'localhost'
       ? 'http://localhost:8001'
-      : 'https://scriblleapp.onrender.com';
+      : 'https://scriblleapp.onrender.com'
 
+  /* -------------------- LOCATION -------------------- */
   useEffect(() => {
-    // Request location permission on mount
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          })
-        },
-        (error) => {
-          console.log('Location permission denied:', error)
-        }
-      )
-    }
+    if (!navigator.geolocation) return
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        })
+      },
+      () => {
+        console.log('Location permission denied')
+      }
+    )
   }, [])
 
+  /* -------------------- HELPERS -------------------- */
   const generateRoomCode = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
     let code = ''
     for (let i = 0; i < 6; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length))
+      code += chars[Math.floor(Math.random() * chars.length)]
     }
     return code
   }
 
+  /* -------------------- ACTIONS -------------------- */
   const handleCreateRoom = () => {
     if (!username.trim()) {
       alert('Please enter a username')
@@ -53,15 +56,13 @@ export default function HomePage() {
   }
 
   const handleJoinRoom = () => {
-    if (!username.trim()) {
-      alert('Please enter a username')
+    if (!username.trim() || !roomCode.trim()) {
+      alert('Username and room code required')
       return
     }
-    if (!roomCode.trim()) {
-      alert('Please enter a room code')
-      return
-    }
-    navigate(`/game?username=${username}&roomCode=${roomCode.toUpperCase()}&isHost=false`)
+    navigate(
+      `/game?username=${username}&roomCode=${roomCode.toUpperCase()}&isHost=false`
+    )
   }
 
   const handleFindNearby = () => {
@@ -71,80 +72,80 @@ export default function HomePage() {
     }
 
     if (!navigator.geolocation) {
-      alert('Geolocation is not supported by your browser')
+      alert('Geolocation not supported')
       return
     }
 
     setSearchingNearby(true)
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      (pos) => {
         const userLocation = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
         }
+
         setLocation(userLocation)
 
-        // Connect to Socket.IO
         const newSocket = io(backendUrl, {
           path: '/api/socket.io',
-          transports: ['polling', 'websocket'],
+          transports: ['websocket'], // 🔥 IMPORTANT
           reconnection: true,
         })
 
         newSocket.on('connect', () => {
-          console.log('Connected to server for nearby search')
-          
           newSocket.emit('find_nearby_match', {
             lat: userLocation.lat,
             lng: userLocation.lng,
-            username: username
+            username,
           })
         })
 
-        newSocket.on('searching', (data) => {
-          console.log('Searching for nearby players:', data.message)
+        newSocket.on('searching', () => {
+          console.log('Searching nearby players...')
         })
 
         newSocket.on('match_found', (data) => {
-          console.log('Match found!', data)
           setSearchingNearby(false)
-          
-          const confirmed = window.confirm(
-            `Match found with ${data.matchedWith} (${data.distance}km away). Join game?`
+
+          const confirmJoin = window.confirm(
+            `Match found with ${data.matchedWith} (${data.distance} km away). Join game?`
           )
-          
-          if (confirmed) {
+
+          if (confirmJoin) {
             newSocket.disconnect()
-            navigate(`/game?username=${username}&roomCode=${data.roomCode}&isHost=false&matchType=nearby`)
+            navigate(
+              `/game?username=${username}&roomCode=${data.roomCode}&isHost=false&matchType=nearby`
+            )
+          } else {
+            newSocket.emit('cancel_search')
           }
         })
 
-        newSocket.on('error', (data) => {
+        newSocket.on('error', (err) => {
+          alert(err.message)
           setSearchingNearby(false)
-          alert(data.message)
           newSocket.disconnect()
         })
 
         setSocket(newSocket)
       },
       () => {
+        alert('Please allow location access')
         setSearchingNearby(false)
-        alert('Please enable location access to find nearby players')
       }
     )
   }
 
   const handleCancelSearch = () => {
-    if (socket) {
-      socket.emit('cancel_search')
-      socket.disconnect()
-      setSocket(null)
-    }
+    socket?.emit('cancel_search')
+    socket?.disconnect()
+    setSocket(null)
     setSearchingNearby(false)
     setMode('menu')
   }
 
+  /* -------------------- UI -------------------- */
   if (searchingNearby) {
     return (
       <div className="home-container">
@@ -152,14 +153,15 @@ export default function HomePage() {
           <div className="searching-container">
             <div className="icon">📍</div>
             <div className="loader"></div>
-            <h2 className="searching-text">Finding Nearby Players...</h2>
-            <p className="searching-subtext">Searching within 50km radius</p>
+            <h2>Finding Nearby Players...</h2>
+            <p>Searching within 50km radius</p>
+
             {location && (
               <p className="location-text">
-                📍 Your location: {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
+                📍 {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
               </p>
             )}
-            
+
             <button className="cancel-button" onClick={handleCancelSearch}>
               Cancel Search
             </button>
@@ -175,35 +177,24 @@ export default function HomePage() {
         <div className="content">
           <div className="header">
             <div className="icon">🎨</div>
-            <h1 className="title">Scribble</h1>
-            <p className="subtitle">Draw, Guess & Have Fun!</p>
+            <h1>Scribble</h1>
+            <p>Draw, Guess & Have Fun!</p>
           </div>
 
           <div className="button-container">
             <button className="primary-button" onClick={() => setMode('nearby')}>
-              <span className="button-icon">📍</span>
-              Find Nearby Players
+              📍 Find Nearby Players
             </button>
 
-            <div className="divider">
-              <div className="divider-line"></div>
-              <span className="divider-text">OR</span>
-              <div className="divider-line"></div>
-            </div>
+            <div className="divider">OR</div>
 
             <button className="secondary-button" onClick={() => setMode('create')}>
-              <span className="button-icon">➕</span>
-              Create Room
+              ➕ Create Room
             </button>
 
             <button className="secondary-button" onClick={() => setMode('join')}>
-              <span className="button-icon">🚪</span>
-              Join with Code
+              🚪 Join with Code
             </button>
-          </div>
-
-          <div className="footer">
-            <p className="footer-text">Made with ❤️ for Scribble lovers</p>
           </div>
         </div>
       </div>
@@ -217,62 +208,54 @@ export default function HomePage() {
           ←
         </button>
 
-        <div className="form-header">
-          <div className="icon">
-            {mode === 'create' ? '➕' : mode === 'nearby' ? '📍' : '🚪'}
-          </div>
-          <h2 className="form-title">
-            {mode === 'create' ? 'Create Room' : mode === 'nearby' ? 'Find Nearby' : 'Join Room'}
-          </h2>
-        </div>
+        <h2>
+          {mode === 'create'
+            ? 'Create Room'
+            : mode === 'nearby'
+            ? 'Find Nearby Players'
+            : 'Join Room'}
+        </h2>
 
         <div className="form">
-          <div className="input-container">
-            <span className="input-icon">👤</span>
-            <input
-              className="input"
-              type="text"
-              placeholder="Enter your username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              maxLength={20}
-            />
-          </div>
+          <input
+            type="text"
+            placeholder="Enter username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            maxLength={20}
+          />
 
           {mode === 'join' && (
-            <div className="input-container">
-              <span className="input-icon">🔑</span>
-              <input
-                className="input"
-                type="text"
-                placeholder="Enter room code"
-                value={roomCode}
-                onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                maxLength={6}
-              />
-            </div>
+            <input
+              type="text"
+              placeholder="Room Code"
+              value={roomCode}
+              onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+              maxLength={6}
+            />
           )}
 
           {mode === 'nearby' && (
-            <div className="info-box">
-              <span className="info-icon">ℹ️</span>
-              <p className="info-text">
-                We'll find players near you (within 50km) who are also looking for a game!
-              </p>
-            </div>
+            <p className="info-text">
+              We’ll match you with players within 50km
+            </p>
           )}
 
           <button
             className="primary-button"
             onClick={
-              mode === 'create' 
-                ? handleCreateRoom 
-                : mode === 'nearby' 
-                ? handleFindNearby 
+              mode === 'create'
+                ? handleCreateRoom
+                : mode === 'nearby'
+                ? handleFindNearby
                 : handleJoinRoom
             }
           >
-            {mode === 'create' ? 'Create Room' : mode === 'nearby' ? 'Find Match' : 'Join Room'}
+            {mode === 'create'
+              ? 'Create Room'
+              : mode === 'nearby'
+              ? 'Find Match'
+              : 'Join Room'}
           </button>
         </div>
       </div>

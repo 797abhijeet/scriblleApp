@@ -1,4 +1,10 @@
-import { forwardRef, useImperativeHandle, useRef, useEffect, useState } from 'react'
+import {
+  forwardRef,
+  useImperativeHandle,
+  useRef,
+  useEffect,
+  useState,
+} from 'react'
 import '../styles/Canvas.css'
 
 interface Stroke {
@@ -42,15 +48,15 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(
         canvas.style.height = `${container.clientHeight}px`
 
         const ctx = canvas.getContext('2d')
-        if (ctx) {
-          ctx.setTransform(ratio, 0, 0, ratio, 0, 0)
-          ctx.lineCap = 'round'
-          ctx.lineJoin = 'round'
-          ctx.strokeStyle = '#000'
-          ctx.lineWidth = 3
-          contextRef.current = ctx
-        }
+        if (!ctx) return
 
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0)
+        ctx.lineCap = 'round'
+        ctx.lineJoin = 'round'
+        ctx.strokeStyle = '#000'
+        ctx.lineWidth = 3
+
+        contextRef.current = ctx
         canvasSizeRef.current = {
           width: container.clientWidth,
           height: container.clientHeight,
@@ -59,9 +65,25 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(
 
       resizeCanvas()
       window.addEventListener('resize', resizeCanvas)
-
       return () => window.removeEventListener('resize', resizeCanvas)
     }, [])
+
+    /* -------------------- Helpers -------------------- */
+    const getPos = (e: any) => {
+      const rect = canvasRef.current!.getBoundingClientRect()
+
+      if (e.touches) {
+        return {
+          x: e.touches[0].clientX - rect.left,
+          y: e.touches[0].clientY - rect.top,
+        }
+      }
+
+      return {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      }
+    }
 
     /* -------------------- Exposed Methods -------------------- */
     useImperativeHandle(ref, () => ({
@@ -93,48 +115,43 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(
       },
     }))
 
-    /* -------------------- Drawing Handlers -------------------- */
-    const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    /* -------------------- Drawing Logic -------------------- */
+    const startDrawing = (e: any) => {
       if (!canDraw) return
+      e.preventDefault()
 
-      const rect = canvasRef.current!.getBoundingClientRect()
-      const x = e.clientX - rect.left
-      const y = e.clientY - rect.top
+      const { x, y } = getPos(e)
 
       strokeRef.current = [{ x, y }]
       setIsDrawing(true)
 
       const ctx = contextRef.current
-      if (ctx) {
-        ctx.beginPath()
-        ctx.moveTo(x, y)
-      }
+      ctx?.beginPath()
+      ctx?.moveTo(x, y)
     }
 
-    const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const draw = (e: any) => {
       if (!isDrawing || !canDraw) return
+      e.preventDefault()
 
-      const rect = canvasRef.current!.getBoundingClientRect()
-      const x = e.clientX - rect.left
-      const y = e.clientY - rect.top
+      const { x, y } = getPos(e)
 
       strokeRef.current.push({ x, y })
 
       const ctx = contextRef.current
-      if (ctx) {
-        ctx.lineTo(x, y)
-        ctx.stroke()
-      }
+      ctx?.lineTo(x, y)
+      ctx?.stroke()
     }
 
-    const stopDrawing = () => {
+    const stopDrawing = (e?: any) => {
       if (!isDrawing || !canDraw) return
+      e?.preventDefault()
+
       setIsDrawing(false)
 
-      const stroke = strokeRef.current
-      if (stroke.length === 0) return
+      if (strokeRef.current.length === 0) return
 
-      const normalized = stroke.map(p => ({
+      const normalized = strokeRef.current.map(p => ({
         x: p.x / canvasSizeRef.current.width,
         y: p.y / canvasSizeRef.current.height,
       }))
@@ -156,6 +173,9 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(
         onMouseMove={draw}
         onMouseUp={stopDrawing}
         onMouseLeave={stopDrawing}
+        onTouchStart={startDrawing}
+        onTouchMove={draw}
+        onTouchEnd={stopDrawing}
       />
     )
   }

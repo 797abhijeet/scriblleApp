@@ -193,37 +193,44 @@ async function startNewRound(roomCode) {
     }
   });
 }
+socket.on("request_history", async ({ room_code }) => {
+  const room = await Room.findOne({ roomCode: room_code });
+  if (!room) return;
+  socket.emit("draw_history", room.strokes);
+});
+socket.on("color_change", ({ room_code, color }) => {
+  socket.to(room_code).emit("color_changed", color);
+});
 
 // Helper: End round
 async function endRound(roomCode) {
-  const room = await Room.findOne({ roomCode })
-  if (!room) return
+  const room = await Room.findOne({ roomCode });
+  if (!room) return;
 
-  if (room.roundTimer) clearTimeout(room.roundTimer)
+  if (room.roundTimer) clearTimeout(room.roundTimer);
 
   // Reveal word once
-  io.to(roomCode).emit('round_end', {
+  io.to(roomCode).emit("round_end", {
     word: room.currentWord,
-    players: room.players
-  })
+    players: room.players,
+  });
 
   // Move drawer
-  room.currentDrawerIndex =
-    (room.currentDrawerIndex + 1) % room.players.length
+  room.currentDrawerIndex = (room.currentDrawerIndex + 1) % room.players.length;
 
   if (room.currentDrawerIndex === 0) {
-    room.currentRound += 1
+    room.currentRound += 1;
   }
 
   if (room.currentRound > room.maxRounds) {
-    endGame(roomCode)
-    return
+    endGame(roomCode);
+    return;
   }
 
-  await room.save()
+  await room.save();
 
   // 🔥 START NEXT ROUND IMMEDIATELY (NO DELAY)
-  startNewRound(roomCode)
+  startNewRound(roomCode);
 }
 
 // Helper: End game
@@ -443,21 +450,37 @@ io.on("connection", (socket) => {
   });
 
   // Draw stroke
-  socket.on("draw_stroke", async (data) => {
-    const { room_code, points, color, width } = data;
-    const roomCode = room_code.toUpperCase();
+  socket.on("draw_stroke", async ({ room_code, points, color, width }) => {
+    const room = await Room.findOne({ roomCode: room_code });
+    if (!room || room.currentDrawerSid !== socket.id) return;
 
-    const room = await Room.findOne({ roomCode });
-    if (!room) return;
-
-    if (room.currentDrawerSid !== socket.id) return;
-
-    const strokeData = { points, color, width };
-    room.strokes.push(strokeData);
+    const stroke = { points, color, width };
+    room.strokes.push(stroke);
+    room.undoneStrokes = [];
     await room.save();
 
-    // 🔥 CORRECT BROADCAST
-    socket.to(roomCode).emit("stroke_drawn", strokeData);
+    socket.to(room_code).emit("stroke_drawn", stroke);
+  });
+  socket.on("undo", async ({ room_code }) => {
+    const room = await Room.findOne({ roomCode: room_code });
+    if (!room || room.currentDrawerSid !== socket.id) return;
+
+    const s = room.strokes.pop();
+    if (s) room.undoneStrokes.push(s);
+
+    await room.save();
+    io.to(room_code).emit("draw_history", room.strokes);
+  });
+
+  socket.on("redo", async ({ room_code }) => {
+    const room = await Room.findOne({ roomCode: room_code });
+    if (!room || room.currentDrawerSid !== socket.id) return;
+
+    const s = room.undoneStrokes.pop();
+    if (s) room.strokes.push(s);
+
+    await room.save();
+    io.to(room_code).emit("draw_history", room.strokes);
   });
 
   // Clear canvas
