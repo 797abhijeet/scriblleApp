@@ -451,25 +451,21 @@ io.on("connection", (socket) => {
   });
 
   // Draw stroke
-  socket.on("draw_stroke", (data) => {
+  socket.on("draw_stroke", async (data) => {
     const { room_code, points, color, width } = data;
     const roomCode = room_code.toUpperCase();
 
-    if (!gameRooms.has(roomCode)) return;
-
-    const room = gameRooms.get(roomCode);
+    const room = await Room.findOne({ roomCode });
+    if (!room) return;
 
     if (room.currentDrawerSid !== socket.id) return;
 
     const strokeData = { points, color, width };
     room.strokes.push(strokeData);
+    await room.save();
 
-    // Broadcast to all except drawer
-    room.players.forEach((player) => {
-      if (player.sid !== socket.id) {
-        io.to(player.sid).emit("stroke_drawn", strokeData);
-      }
-    });
+    // 🔥 CORRECT BROADCAST
+    socket.to(roomCode).emit("stroke_drawn", strokeData);
   });
 
   // Clear canvas
