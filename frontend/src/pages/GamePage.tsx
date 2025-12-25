@@ -140,6 +140,13 @@ export default function GamePage() {
         canvasRef.current.clear()
       }
     })
+    newSocket.on('system_message', (data) => {
+      setMessages(prev => [
+        ...prev,
+        { username: 'System', message: data.text, type: 'correct' }
+      ])
+    })
+
 
     newSocket.on('correct_guess', (data) => {
       addSystemMessage(`${data.player} guessed correctly! +${data.points} points`, 'correct')

@@ -196,42 +196,34 @@ async function startNewRound(roomCode) {
 
 // Helper: End round
 async function endRound(roomCode) {
-  const room = gameRooms.get(roomCode);
-  if (!room) return;
+  const room = await Room.findOne({ roomCode })
+  if (!room) return
 
-  if (room.roundTimer) {
-    clearTimeout(room.roundTimer);
-  }
+  if (room.roundTimer) clearTimeout(room.roundTimer)
 
-  // Award points to players who guessed
-  room.guessedPlayers.forEach((playerSid) => {
-    const player = room.players.find((p) => p.sid === playerSid);
-    if (player) player.score += 100;
-  });
-
-  // Award points to drawer if anyone guessed
-  if (room.guessedPlayers.length > 0) {
-    const drawer = room.players.find((p) => p.sid === room.currentDrawerSid);
-    if (drawer) drawer.score += 50;
-  }
-
-  io.to(roomCode).emit("round_end", {
+  // Reveal word once
+  io.to(roomCode).emit('round_end', {
     word: room.currentWord,
-    players: room.players,
-  });
+    players: room.players
+  })
 
-  // Move to next round or end game
-  room.currentDrawerIndex = (room.currentDrawerIndex + 1) % room.players.length;
+  // Move drawer
+  room.currentDrawerIndex =
+    (room.currentDrawerIndex + 1) % room.players.length
 
   if (room.currentDrawerIndex === 0) {
-    room.currentRound++;
+    room.currentRound += 1
   }
 
   if (room.currentRound > room.maxRounds) {
-    endGame(roomCode);
-  } else {
-    setTimeout(() => startNewRound(roomCode), 5000);
+    endGame(roomCode)
+    return
   }
+
+  await room.save()
+
+  // 🔥 START NEXT ROUND IMMEDIATELY (NO DELAY)
+  startNewRound(roomCode)
 }
 
 // Helper: End game
@@ -484,48 +476,47 @@ io.on("connection", (socket) => {
   });
 
   // Send guess
-  socket.on("send_guess", (data) => {
-    const { room_code, guess } = data;
+  socket.on("send_guess", async ({ room_code, guess }) => {
     const roomCode = room_code.toUpperCase();
+    const room = await Room.findOne({ roomCode });
+    if (!room) return;
 
-    if (!gameRooms.has(roomCode)) return;
-
-    const room = gameRooms.get(roomCode);
-
+    // Drawer cannot guess
     if (room.currentDrawerSid === socket.id) return;
+
+    // Already guessed
     if (room.guessedPlayers.includes(socket.id)) return;
 
     const player = room.players.find((p) => p.sid === socket.id);
     if (!player) return;
 
-    const guessLower = guess.toLowerCase().trim();
-    const wordLower = room.currentWord.toLowerCase();
+    const normalizedGuess = guess.trim().toLowerCase();
+    const correctWord = room.currentWord.toLowerCase();
 
-    if (guessLower === wordLower) {
+    // ✅ CORRECT GUESS
+    if (normalizedGuess === correctWord) {
       room.guessedPlayers.push(socket.id);
 
-      const timeElapsed = (Date.now() - room.roundStartTime) / 1000;
-      const points = Math.max(50, 200 - Math.floor(timeElapsed * 2));
-      player.score += points;
+      // Score logic
+      player.score += 100;
 
-      io.to(roomCode).emit("correct_guess", {
-        player: player.username,
-        points,
+      await room.save();
+
+      // 🔔 SYSTEM MESSAGE (NOT NORMAL CHAT)
+      io.to(roomCode).emit("system_message", {
+        text: `${player.username} guessed the word correctly! 🎉`,
       });
 
-      socket.emit("guess_result", { correct: true, points });
-
-      if (room.guessedPlayers.length === room.players.length - 1) {
-        endRound(roomCode);
-      }
-    } else {
-      io.to(roomCode).emit("chat_message", {
-        username: player.username,
-        message: guess,
-      });
-
-      socket.emit("guess_result", { correct: false });
+      // 🔥 END ROUND IMMEDIATELY
+      endRound(roomCode);
+      return;
     }
+
+    // ❌ WRONG GUESS → normal chat
+    io.to(roomCode).emit("chat_message", {
+      username: player.username,
+      message: guess,
+    });
   });
 
   socket.on("disconnect", async () => {
