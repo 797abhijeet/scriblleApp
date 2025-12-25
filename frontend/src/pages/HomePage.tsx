@@ -214,7 +214,7 @@ export default function HomePage() {
     <div className="home-container">
       <div className="content">
         <button className="back-button" onClick={() => setMode('menu')}>
-          ← Back
+          ←
         </button>
 
         <div className="form-header">

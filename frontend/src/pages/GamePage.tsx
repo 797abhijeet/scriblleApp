@@ -245,7 +245,7 @@ export default function GamePage() {
       <div className="game-header">
         <div className="header-left">
           <button onClick={handleLeaveRoom} className="icon-button">
-            ← Back
+            ← 
           </button>
           <div>
             <div className="room-code">Room: {roomCode}</div>

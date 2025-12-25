@@ -533,17 +533,43 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", async () => {
+    console.log(`❌ Client disconnected: ${socket.id}`);
+
     const room = await Room.findOne({ "players.sid": socket.id });
     if (!room) return;
 
+    const leavingPlayer = room.players.find((p) => p.sid === socket.id);
+    const wasHost = leavingPlayer?.isHost;
+
+    // Remove player
     room.players = room.players.filter((p) => p.sid !== socket.id);
 
+    // If room empty → delete
     if (room.players.length === 0) {
       await Room.deleteOne({ roomCode: room.roomCode });
-    } else {
-      await room.save();
-      io.to(room.roomCode).emit("player_left", { players: room.players });
+      console.log(`🗑️ Room ${room.roomCode} deleted`);
+      return;
     }
+
+    // 🔑 HOST HANDOVER LOGIC
+    if (wasHost) {
+      // Make first remaining player the new host
+      room.players.forEach((p) => (p.isHost = false));
+      room.players[0].isHost = true;
+
+      io.to(room.roomCode).emit("host_changed", {
+        newHostSid: room.players[0].sid,
+        newHostUsername: room.players[0].username,
+      });
+
+      console.log(`👑 New host: ${room.players[0].username}`);
+    }
+
+    await room.save();
+
+    io.to(room.roomCode).emit("player_left", {
+      players: room.players,
+    });
   });
 });
 
