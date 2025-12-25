@@ -15,7 +15,7 @@ export default function HomePage() {
    const backendUrl =
     window.location.hostname === 'localhost'
       ? 'http://localhost:8001'
-      : 'https://scriblleapp.onrender.com';
+      : 'https://your-backend.onrender.com';
 
   useEffect(() => {
     // Request location permission on mount
@@ -128,7 +128,7 @@ export default function HomePage() {
 
         setSocket(newSocket)
       },
-      () => {
+      (error) => {
         setSearchingNearby(false)
         alert('Please enable location access to find nearby players')
       }
@@ -214,7 +214,7 @@ export default function HomePage() {
     <div className="home-container">
       <div className="content">
         <button className="back-button" onClick={() => setMode('menu')}>
-          ← 
+          ← Back
         </button>
 
         <div className="form-header">

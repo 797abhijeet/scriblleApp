@@ -20,7 +20,7 @@ interface Message {
 export default function GamePage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-
+  
   const username = searchParams.get('username') || ''
   const roomCode = searchParams.get('roomCode') || ''
   const isHost = searchParams.get('isHost') === 'true'
@@ -38,10 +38,10 @@ export default function GamePage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<any>(null)
 
-  const backendUrl =
-    window.location.hostname === 'localhost'
-      ? 'http://localhost:8001'
-      : 'https://scriblleapp.onrender.com';
+const backendUrl =
+  window.location.hostname === 'localhost'
+    ? 'http://localhost:8001'
+    : 'https://your-backend.onrender.com';
 
   useEffect(() => {
     const newSocket = io(backendUrl, {
@@ -52,7 +52,7 @@ export default function GamePage() {
 
     newSocket.on('connect', () => {
       console.log('Connected to server')
-
+      
       if (isHost) {
         newSocket.emit('create_room', {
           room_code: roomCode,
@@ -66,23 +66,15 @@ export default function GamePage() {
       }
     })
 
-    newSocket.on("room_created", (data) => {
-      setPlayers(data.players);
-      navigate(`/game?username=${username}&roomCode=${data.roomCode}&isHost=true`);
-    });
+    newSocket.on('room_created', (data) => {
+      setPlayers(data.players)
+      addSystemMessage(`Room ${roomCode} created!`)
+    })
 
-    newSocket.on("room_joined", (data) => {
-      setPlayers(data.players);
-    });
-
-    newSocket.on("system_message", (data) => {
-      setMessages(prev => [...prev, {
-        username: "System",
-        message: data.text,
-        type: "correct"
-      }]);
-    });
-
+    newSocket.on('room_joined', (data) => {
+      setPlayers(data.players)
+      addSystemMessage(`Joined room ${roomCode}!`)
+    })
 
     newSocket.on('player_joined', (data) => {
       setPlayers(data.players)
@@ -105,7 +97,7 @@ export default function GamePage() {
       setCurrentWord(data.word)
       setIsDrawer(data.drawerSid === newSocket.id)
       setTimeLeft(60)
-
+      
       if (canvasRef.current) {
         canvasRef.current.clear()
       }
@@ -253,7 +245,7 @@ export default function GamePage() {
       <div className="game-header">
         <div className="header-left">
           <button onClick={handleLeaveRoom} className="icon-button">
-            ←
+            ← Back
           </button>
           <div>
             <div className="room-code">Room: {roomCode}</div>
@@ -302,7 +294,7 @@ export default function GamePage() {
               )}
               {isDrawer && (
                 <div className="drawing-instructions">
-                  👆Click and drag to draw
+                  👆 Click and drag to draw
                 </div>
               )}
               <Canvas
@@ -335,7 +327,7 @@ export default function GamePage() {
               <span className="chat-icon">💬</span>
               <span className="chat-title">Chat</span>
             </div>
-
+            
             <div className="messages-list">
               {messages.map((msg, index) => (
                 <div
