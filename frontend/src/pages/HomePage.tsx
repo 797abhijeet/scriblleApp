@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { io, Socket } from 'socket.io-client'
-import '../styles/HomePage.css'
 
 export default function HomePage() {
   const [username, setUsername] = useState('')
@@ -147,23 +146,30 @@ export default function HomePage() {
 
   if (searchingNearby) {
     return (
-      <div className="home-container">
-        <div className="content">
-          <div className="searching-container">
-            <div className="icon">📍</div>
-            <div className="loader"></div>
-            <h2 className="searching-text">Finding Nearby Players...</h2>
-            <p className="searching-subtext">Searching within 50km radius</p>
-            {location && (
-              <p className="location-text">
-                📍 Your location: {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
-              </p>
-            )}
-
-            <button className="cancel-button" onClick={handleCancelSearch}>
-              Cancel Search
-            </button>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
+          <div className="text-6xl mb-6">📍</div>
+          
+          <div className="relative w-16 h-16 mx-auto mb-6">
+            <div className="absolute inset-0 rounded-full border-4 border-blue-200 animate-ping"></div>
+            <div className="absolute inset-4 rounded-full bg-gradient-to-r from-blue-500 to-purple-600"></div>
           </div>
+          
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Finding Nearby Players...</h2>
+          <p className="text-gray-600 mb-4">Searching within 50km radius</p>
+          
+          {location && (
+            <p className="text-sm text-gray-500 mb-6">
+              📍 Your location: {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
+            </p>
+          )}
+
+          <button 
+            onClick={handleCancelSearch}
+            className="w-full py-3 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 font-semibold rounded-xl hover:opacity-90 transition-opacity"
+          >
+            Cancel Search
+          </button>
         </div>
       </div>
     )
@@ -171,39 +177,51 @@ export default function HomePage() {
 
   if (mode === 'menu') {
     return (
-      <div className="home-container">
-        <div className="content">
-          <div className="header">
-            <div className="icon">🎨</div>
-            <h1 className="title">Scribble</h1>
-            <p className="subtitle">Draw, Guess & Have Fun!</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          <div className="text-center mb-8">
+            <div className="text-6xl mb-4">🎨</div>
+            <h1 className="text-4xl font-bold text-gray-800 mb-2">Scribble</h1>
+            <p className="text-gray-600">Draw, Guess & Have Fun!</p>
           </div>
 
-          <div className="button-container">
-            <button className="primary-button" onClick={() => setMode('nearby')}>
-              <span className="button-icon">📍</span>
-              Find Nearby Players
+          <div className="space-y-4">
+            <button 
+              onClick={() => setMode('nearby')}
+              className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-xl hover:opacity-90 transition-opacity shadow-lg flex items-center justify-center space-x-2"
+            >
+              <span className="text-xl">📍</span>
+              <span>Find Nearby Players</span>
             </button>
 
-            <div className="divider">
-              <div className="divider-line"></div>
-              <span className="divider-text">OR</span>
-              <div className="divider-line"></div>
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-white text-gray-500">OR</span>
+              </div>
             </div>
 
-            <button className="secondary-button" onClick={() => setMode('create')}>
-              <span className="button-icon">➕</span>
-              Create Room
+            <button 
+              onClick={() => setMode('create')}
+              className="w-full py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-xl hover:opacity-90 transition-opacity shadow-lg flex items-center justify-center space-x-2"
+            >
+              <span className="text-xl">➕</span>
+              <span>Create Room</span>
             </button>
 
-            <button className="secondary-button" onClick={() => setMode('join')}>
-              <span className="button-icon">🚪</span>
-              Join with Code
+            <button 
+              onClick={() => setMode('join')}
+              className="w-full py-4 bg-gradient-to-r from-indigo-500 to-blue-600 text-white font-semibold rounded-xl hover:opacity-90 transition-opacity shadow-lg flex items-center justify-center space-x-2"
+            >
+              <span className="text-xl">🚪</span>
+              <span>Join with Code</span>
             </button>
           </div>
 
-          <div className="footer">
-            <p className="footer-text">Made with ❤️ for Scribble lovers</p>
+          <div className="mt-8 text-center">
+            <p className="text-gray-500">Made with ❤️ for Scribble lovers</p>
           </div>
         </div>
       </div>
@@ -211,59 +229,67 @@ export default function HomePage() {
   }
 
   return (
-    <div className="home-container">
-      <div className="content">
-        <button className="back-button" onClick={() => setMode('menu')}>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
+        <button 
+          onClick={() => setMode('menu')}
+          className="mb-6 p-2 hover:bg-gray-100 rounded-full transition-colors"
+        >
           ←
         </button>
 
-        <div className="form-header">
-          <div className="icon">
+        <div className="text-center mb-8">
+          <div className="text-5xl mb-4">
             {mode === 'create' ? '➕' : mode === 'nearby' ? '📍' : '🚪'}
           </div>
-          <h2 className="form-title">
+          <h2 className="text-2xl font-bold text-gray-800">
             {mode === 'create' ? 'Create Room' : mode === 'nearby' ? 'Find Nearby' : 'Join Room'}
           </h2>
         </div>
 
-        <div className="form">
-          <div className="input-container">
-            <span className="input-icon">👤</span>
+        <div className="space-y-6">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <span className="text-gray-400 text-xl">👤</span>
+            </div>
             <input
-              className="input"
               type="text"
               placeholder="Enter your username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               maxLength={20}
+              className="w-full pl-12 pr-4 py-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
           {mode === 'join' && (
-            <div className="input-container">
-             
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <span className="text-gray-400 text-xl">🔢</span>
+              </div>
               <input
-                className="input"
                 type="text"
                 placeholder="Enter room code"
                 value={roomCode}
                 onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
                 maxLength={6}
+                className="w-full pl-12 pr-4 py-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
               />
             </div>
           )}
 
           {mode === 'nearby' && (
-            <div className="info-box">
-              <span className="info-icon">ℹ️</span>
-              <p className="info-text">
-                We'll find players near you (within 50km) who are also looking for a game!
-              </p>
+            <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+              <div className="flex items-start">
+                <span className="text-blue-500 mr-2">ℹ️</span>
+                <p className="text-sm text-blue-700">
+                  We'll find players near you (within 50km) who are also looking for a game!
+                </p>
+              </div>
             </div>
           )}
 
           <button
-            className="primary-button"
             onClick={
               mode === 'create'
                 ? handleCreateRoom
@@ -271,6 +297,13 @@ export default function HomePage() {
                   ? handleFindNearby
                   : handleJoinRoom
             }
+            className={`w-full py-4 text-white font-semibold rounded-xl hover:opacity-90 transition-opacity shadow-lg ${
+              mode === 'create'
+                ? 'bg-gradient-to-r from-blue-500 to-purple-600'
+                : mode === 'nearby'
+                ? 'bg-gradient-to-r from-green-500 to-emerald-600'
+                : 'bg-gradient-to-r from-indigo-500 to-blue-600'
+            }`}
           >
             {mode === 'create' ? 'Create Room' : mode === 'nearby' ? 'Find Match' : 'Join Room'}
           </button>

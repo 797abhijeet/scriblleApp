@@ -5,7 +5,6 @@ import {
   useState,
   useEffect,
 } from 'react'
-import '../styles/Canvas.css'
 
 interface Stroke {
   points: { x: number; y: number }[]
@@ -192,7 +191,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(
     return (
       <canvas
         ref={canvasRef}
-        className="drawing-canvas"
+        className="w-full h-full touch-none bg-white rounded-lg shadow-md"
         onMouseDown={onMouseDown}
         onMouseMove={onMouseMove}
         onMouseUp={end}

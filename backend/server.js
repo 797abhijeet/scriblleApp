@@ -21,7 +21,7 @@ mongoose.connect(process.env.MONGO_URL)
   .then(() => console.log("✅ MongoDB Connected"))
   .catch(console.error);
 
-const WORD_BANK = ["cat","dog","car","house","tree","phone","pizza","apple"];
+const WORD_BANK = ["cat", "dog", "car", "house", "tree", "phone", "pizza", "apple"];
 
 const generateRoomCode = () =>
   Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -87,7 +87,7 @@ async function endRound(roomCode) {
    SOCKET
 ====================== */
 io.on("connection", (socket) => {
-  console.log("🔗", socket.id);
+  console.log("🔗 Connected:", socket.id);
 
   socket.on("create_room", async ({ username }) => {
     const roomCode = generateRoomCode();
@@ -158,9 +158,64 @@ io.on("connection", (socket) => {
       message: guess,
     });
   });
+
+  /* ======================
+     PLAYER DISCONNECTION HANDLING
+  ====================== */
+  socket.on("disconnect", async () => {
+    console.log("🔌 Disconnected:", socket.id);
+
+    try {
+      // Find all rooms where this player exists
+      const rooms = await Room.find({ "players.sid": socket.id });
+
+      for (const room of rooms) {
+        const player = room.players.find(p => p.sid === socket.id);
+        if (!player) continue;
+
+        // Store player info for message
+        const playerUsername = player.username;
+        const wasHost = player.isHost;
+
+        // Remove player from room
+        room.players = room.players.filter(p => p.sid !== socket.id);
+
+        // If room becomes empty, delete it
+        if (room.players.length === 0) {
+          await Room.deleteOne({ roomCode: room.roomCode });
+          continue;
+        }
+
+        // If the disconnected player was the host, transfer host to the next player
+        if (wasHost && room.players.length > 0) {
+          room.players[0].isHost = true;
+          
+          io.to(room.roomCode).emit("system_message", {
+            text: `👑 ${room.players[0].username} is now the room owner`
+          });
+        }
+
+        // Save room
+        await room.save();
+
+        // Notify all players in the room
+        io.to(room.roomCode).emit("player_left", {
+          players: room.players,
+          leftPlayer: playerUsername,
+          isHost: wasHost,
+          newHost: wasHost && room.players.length > 0 ? room.players[0].username : null
+        });
+
+        // Send system message to chat
+        io.to(room.roomCode).emit("system_message", {
+          text: `👋 ${playerUsername} left the room${wasHost ? " (was room owner)" : ""}`
+        });
+      }
+    } catch (error) {
+      console.error("Error handling disconnect:", error);
+    }
+  });
 });
-
-
 
 const PORT = process.env.PORT || 8001;
 server.listen(PORT, "0.0.0.0", () =>

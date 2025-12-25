@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { io, Socket } from 'socket.io-client'
 import Canvas from '../components/Canvas'
-import '../styles/GamePage.css'
 
 interface Player {
   sid: string
@@ -83,7 +82,6 @@ export default function GamePage() {
       }]);
     });
 
-
     newSocket.on('player_joined', (data) => {
       setPlayers(data.players)
       addSystemMessage('A player joined the room')
@@ -91,7 +89,11 @@ export default function GamePage() {
 
     newSocket.on('player_left', (data) => {
       setPlayers(data.players)
-      addSystemMessage('A player left the room')
+      addSystemMessage(`👋 ${data.leftPlayer} left the room${data.isHost ? ' (was room owner)' : ''}`)
+      
+      if (data.newHost) {
+        addSystemMessage(`👑 ${data.newHost} is now the room owner`)
+      }
     })
 
     newSocket.on('game_started', () => {
@@ -248,128 +250,200 @@ export default function GamePage() {
   }
 
   return (
-    <div className="game-container">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
       {/* Header */}
-      <div className="game-header">
-        <div className="header-left">
-          <button onClick={handleLeaveRoom} className="icon-button">
-            ←
-          </button>
-          <div>
-            <div className="room-code">Room: {roomCode}</div>
-            {gameStarted && (
-              <div className="round-info">Round {currentRound} • {timeLeft}s</div>
-            )}
-          </div>
-        </div>
-        {!gameStarted && isHost && players.length >= 2 && (
-          <button onClick={handleStartGame} className="start-button">
-            Start Game
-          </button>
-        )}
-      </div>
-
-      {/* Players List */}
-      <div className="players-container">
-        <div className="players-list">
-          {players.map((player) => (
-            <div key={player.sid} className="player-card">
-              <div className={`player-avatar ${isDrawer && player.sid === socket?.id ? 'drawer' : ''}`}>
-                {player.username.charAt(0).toUpperCase()}
+      <div className="max-w-7xl mx-auto">
+        <div className="flex justify-between items-center mb-6 p-4 bg-white rounded-xl shadow-lg">
+          <div className="flex items-center space-x-4">
+            <button 
+              onClick={handleLeaveRoom}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              ←
+            </button>
+            <div>
+              <div className="text-xl font-bold text-gray-800">
+                Room: <span className="text-blue-600">{roomCode}</span>
               </div>
-              <div className="player-name">{player.username}</div>
-              <div className="player-score">{player.score}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="main-content">
-        {/* Canvas */}
-        <div className="canvas-container">
-          {gameStarted ? (
-            <>
-              {isDrawer && (
-                <div className="word-display drawer">
-                  Draw: {currentWord}
+              {gameStarted && (
+                <div className="text-sm text-gray-600">
+                  Round {currentRound} • {timeLeft}s
                 </div>
-              )}
-              {!isDrawer && currentWord && (
-                <div className="word-display guesser">
-                  Word: {currentWord.replace(/./g, '_ ')}
-                </div>
-              )}
-              {isDrawer && (
-                <div className="drawing-instructions">
-                  👆Click and drag to draw
-                </div>
-              )}
-              <Canvas
-                ref={canvasRef}
-                canDraw={isDrawer}
-                onStrokeSent={handleStrokeSent}
-              />
-              {isDrawer && (
-                <button className="clear-button" onClick={handleClearCanvas}>
-                  🗑️ Clear
-                </button>
-              )}
-            </>
-          ) : (
-            <div className="waiting-container">
-              <div className="waiting-icon">👥</div>
-              <div className="waiting-text">Waiting for players...</div>
-              <div className="waiting-subtext">{players.length} / 8 players</div>
-              {isHost && (
-                <div className="waiting-subtext">Need at least 2 players to start</div>
               )}
             </div>
+          </div>
+          
+          {!gameStarted && isHost && players.length >= 2 && (
+            <button 
+              onClick={handleStartGame}
+              className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-xl hover:opacity-90 transition-opacity shadow-lg"
+            >
+              Start Game
+            </button>
           )}
         </div>
 
-        {/* Chat Sidebar */}
-        {gameStarted && (
-          <div className="chat-sidebar">
-            <div className="chat-header">
-              <span className="chat-icon">💬</span>
-              <span className="chat-title">Chat</span>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Players List */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl shadow-lg p-4">
+              <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                <span className="mr-2">👥</span> Players ({players.length}/8)
+              </h2>
+              <div className="space-y-3">
+                {players.map((player) => (
+                  <div key={player.sid} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                        isDrawer && player.sid === socket?.id 
+                          ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white' 
+                          : 'bg-gradient-to-r from-blue-400 to-purple-500 text-white'
+                      }`}>
+                        {player.username.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-800">
+                          {player.username}
+                          {player.isHost && <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">👑 Host</span>}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {player.sid === socket?.id ? 'You' : ''}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="font-bold text-gray-800">
+                      {player.score}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="lg:col-span-3 grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Canvas */}
+            <div className="lg:col-span-2">
+              <div className="bg-white rounded-xl shadow-lg p-4 h-full">
+                {gameStarted ? (
+                  <>
+                    <div className="mb-4">
+                      {isDrawer && (
+                        <div className="text-center p-4 bg-gradient-to-r from-green-100 to-emerald-200 rounded-lg mb-4">
+                          <div className="text-lg font-bold text-emerald-800">
+                            Draw: <span className="text-2xl">{currentWord}</span>
+                          </div>
+                          <div className="text-sm text-emerald-600 mt-1">
+                            👆 Click and drag to draw
+                          </div>
+                        </div>
+                      )}
+                      {!isDrawer && currentWord && (
+                        <div className="text-center p-4 bg-gradient-to-r from-blue-100 to-indigo-200 rounded-lg mb-4">
+                          <div className="text-lg font-bold text-indigo-800">
+                            Word: <span className="text-2xl tracking-widest">{currentWord.replace(/./g, '_ ')}</span>
+                          </div>
+                          <div className="text-sm text-indigo-600 mt-1">
+                            Type your guess in the chat!
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="relative h-[500px] bg-gray-50 rounded-xl overflow-hidden border-2 border-gray-200">
+                      <Canvas
+                        ref={canvasRef}
+                        canDraw={isDrawer}
+                        onStrokeSent={handleStrokeSent}
+                      />
+                    </div>
+                    
+                    {isDrawer && (
+                      <div className="mt-4 flex justify-center">
+                        <button 
+                          onClick={handleClearCanvas}
+                          className="px-6 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white font-semibold rounded-xl hover:opacity-90 transition-opacity shadow-lg flex items-center"
+                        >
+                          🗑️ Clear Canvas
+                        </button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="h-[500px] flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl">
+                    <div className="text-6xl mb-4">👥</div>
+                    <h3 className="text-2xl font-bold text-gray-700 mb-2">Waiting for players...</h3>
+                    <p className="text-gray-600 mb-1">{players.length} / 8 players joined</p>
+                    {isHost && (
+                      <p className="text-gray-500 text-sm">Need at least 2 players to start</p>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="messages-list">
-              {messages.map((msg, index) => (
-                <div
-                  key={index}
-                  className={`message-item ${msg.type === 'system' ? 'system' : ''} ${msg.type === 'correct' ? 'correct' : ''}`}
-                >
-                  {msg.type === 'system' || msg.type === 'correct' ? (
-                    <span>{msg.message}</span>
-                  ) : (
-                    <span>
-                      <strong>{msg.username}:</strong> {msg.message}
-                    </span>
+            {/* Chat Sidebar */}
+            {gameStarted && (
+              <div className="lg:col-span-1">
+                <div className="bg-white rounded-xl shadow-lg h-full flex flex-col">
+                  {/* Chat Header */}
+                  <div className="p-4 border-b">
+                    <div className="flex items-center">
+                      <span className="text-xl mr-2">💬</span>
+                      <span className="font-bold text-gray-800">Chat</span>
+                    </div>
+                  </div>
+
+                  {/* Messages */}
+                  <div className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[500px]">
+                    {messages.map((msg, index) => (
+                      <div
+                        key={index}
+                        className={`p-3 rounded-lg ${
+                          msg.type === 'system' 
+                            ? 'bg-blue-50 text-blue-800' 
+                            : msg.type === 'correct'
+                            ? 'bg-gradient-to-r from-green-50 to-emerald-100 text-emerald-800 border border-emerald-200'
+                            : 'bg-gray-50 text-gray-800'
+                        }`}
+                      >
+                        {msg.type === 'system' || msg.type === 'correct' ? (
+                          <span>{msg.message}</span>
+                        ) : (
+                          <span>
+                            <strong className="text-purple-600">{msg.username}:</strong> {msg.message}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                    <div ref={messagesEndRef} />
+                  </div>
+
+                  {/* Guess Input */}
+                  {!isDrawer && (
+                    <div className="p-4 border-t">
+                      <form onSubmit={handleSendGuess} className="flex space-x-2">
+                        <input
+                          type="text"
+                          placeholder="Type your guess..."
+                          value={guessInput}
+                          onChange={(e) => setGuessInput(e.target.value)}
+                          className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                        <button
+                          type="submit"
+                          className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-xl hover:opacity-90 transition-opacity"
+                        >
+                          ➤
+                        </button>
+                      </form>
+                    </div>
                   )}
                 </div>
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
-
-            {!isDrawer && (
-              <form className="input-form" onSubmit={handleSendGuess}>
-                <input
-                  className="guess-input"
-                  type="text"
-                  placeholder="Type your guess..."
-                  value={guessInput}
-                  onChange={(e) => setGuessInput(e.target.value)}
-                />
-                <button type="submit" className="send-button">
-                  ➤
-                </button>
-              </form>
+              </div>
             )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   )
