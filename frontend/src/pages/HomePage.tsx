@@ -12,7 +12,7 @@ export default function HomePage() {
   const [socket, setSocket] = useState<Socket | null>(null)
   const navigate = useNavigate()
 
-   const backendUrl =
+  const backendUrl =
     window.location.hostname === 'localhost'
       ? 'http://localhost:8001'
       : 'https://scriblleapp.onrender.com';
@@ -44,25 +44,15 @@ export default function HomePage() {
   }
 
   const handleCreateRoom = () => {
-    if (!username.trim()) {
-      alert('Please enter a username')
-      return
-    }
-    const code = generateRoomCode()
-    navigate(`/game?username=${username}&roomCode=${code}&isHost=true`)
-  }
+    if (!username.trim()) return alert("Enter username");
+    navigate(`/game?username=${username}&isHost=true`);
+  };
 
   const handleJoinRoom = () => {
-    if (!username.trim()) {
-      alert('Please enter a username')
-      return
-    }
-    if (!roomCode.trim()) {
-      alert('Please enter a room code')
-      return
-    }
-    navigate(`/game?username=${username}&roomCode=${roomCode.toUpperCase()}&isHost=false`)
-  }
+    if (!username || !roomCode) return alert("Missing info");
+    navigate(`/game?username=${username}&roomCode=${roomCode}&isHost=false`);
+  };
+
 
   const handleFindNearby = () => {
     if (!username.trim()) {
@@ -94,7 +84,7 @@ export default function HomePage() {
 
         newSocket.on('connect', () => {
           console.log('Connected to server for nearby search')
-          
+
           newSocket.emit('find_nearby_match', {
             lat: userLocation.lat,
             lng: userLocation.lng,
@@ -109,11 +99,11 @@ export default function HomePage() {
         newSocket.on('match_found', (data) => {
           console.log('Match found!', data)
           setSearchingNearby(false)
-          
+
           const confirmed = window.confirm(
             `Match found with ${data.matchedWith} (${data.distance}km away). Join game?`
           )
-          
+
           if (confirmed) {
             newSocket.disconnect()
             navigate(`/game?username=${username}&roomCode=${data.roomCode}&isHost=false&matchType=nearby`)
@@ -159,7 +149,7 @@ export default function HomePage() {
                 📍 Your location: {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
               </p>
             )}
-            
+
             <button className="cancel-button" onClick={handleCancelSearch}>
               Cancel Search
             </button>
@@ -214,7 +204,7 @@ export default function HomePage() {
     <div className="home-container">
       <div className="content">
         <button className="back-button" onClick={() => setMode('menu')}>
-          ← 
+          ←
         </button>
 
         <div className="form-header">
@@ -265,11 +255,11 @@ export default function HomePage() {
           <button
             className="primary-button"
             onClick={
-              mode === 'create' 
-                ? handleCreateRoom 
-                : mode === 'nearby' 
-                ? handleFindNearby 
-                : handleJoinRoom
+              mode === 'create'
+                ? handleCreateRoom
+                : mode === 'nearby'
+                  ? handleFindNearby
+                  : handleJoinRoom
             }
           >
             {mode === 'create' ? 'Create Room' : mode === 'nearby' ? 'Find Match' : 'Join Room'}

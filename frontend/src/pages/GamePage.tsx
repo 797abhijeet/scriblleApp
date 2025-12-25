@@ -66,15 +66,23 @@ export default function GamePage() {
       }
     })
 
-    newSocket.on('room_created', (data) => {
-      setPlayers(data.players)
-      addSystemMessage(`Room ${roomCode} created!`)
-    })
+    newSocket.on("room_created", (data) => {
+      setPlayers(data.players);
+      navigate(`/game?username=${username}&roomCode=${data.roomCode}&isHost=true`);
+    });
 
-    newSocket.on('room_joined', (data) => {
-      setPlayers(data.players)
-      addSystemMessage(`Joined room ${roomCode}!`)
-    })
+    newSocket.on("room_joined", (data) => {
+      setPlayers(data.players);
+    });
+
+    newSocket.on("system_message", (data) => {
+      setMessages(prev => [...prev, {
+        username: "System",
+        message: data.text,
+        type: "correct"
+      }]);
+    });
+
 
     newSocket.on('player_joined', (data) => {
       setPlayers(data.players)
@@ -245,7 +253,7 @@ export default function GamePage() {
       <div className="game-header">
         <div className="header-left">
           <button onClick={handleLeaveRoom} className="icon-button">
-            ← 
+            ←
           </button>
           <div>
             <div className="room-code">Room: {roomCode}</div>
