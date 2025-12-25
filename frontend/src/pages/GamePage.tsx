@@ -49,7 +49,7 @@ export default function GamePage() {
   useEffect(() => {
     const newSocket = io(backendUrl, {
       path: '/api/socket.io',
-      transports: ['websocket'], // 🔥 production safe
+      transports: ['websocket'], // ✅ production safe
       reconnection: true,
     })
 
@@ -60,7 +60,7 @@ export default function GamePage() {
         newSocket.emit('join_room', { room_code: roomCode, username })
       }
 
-      // 🔄 request draw history on reconnect
+      // 🔄 redraw history on reconnect
       newSocket.emit('request_history', { room_code: roomCode })
     })
 
@@ -70,14 +70,17 @@ export default function GamePage() {
     newSocket.on('player_joined', (d) => setPlayers(d.players))
     newSocket.on('player_left', (d) => setPlayers(d.players))
 
-    newSocket.on('host_changed', (d) =>
-      addSystemMessage(`${d.newHostUsername} is now host 👑`)
-    )
+    newSocket.on('host_changed', (d) => {
+      setMessages((p) => [
+        ...p,
+        { username: 'System', message: `${d.newHostUsername} is now the room host 👑`, type: 'system' },
+      ])
+    })
 
     /* ---------- GAME EVENTS ---------- */
     newSocket.on('game_started', () => {
       setGameStarted(true)
-      addSystemMessage('Game started!')
+      setMessages((p) => [...p, { username: 'System', message: 'Game started!', type: 'system' }])
     })
 
     newSocket.on('new_round', (d) => {
@@ -89,20 +92,37 @@ export default function GamePage() {
 
       if (timerRef.current) clearInterval(timerRef.current)
       timerRef.current = setInterval(() => {
-        setTimeLeft((t) => (t <= 1 ? 0 : t - 1))
+        setTimeLeft((t) => {
+          if (t <= 1) {
+            clearInterval(timerRef.current)
+            return 0
+          }
+          return t - 1
+        })
       }, 1000)
     })
 
     newSocket.on('round_end', (d) => {
       setPlayers(d.players)
-      addSystemMessage(`Word was: ${d.word}`)
+      setMessages((p) => [
+        ...p,
+        { username: 'System', message: `Round ended! The word was: ${d.word}`, type: 'system' },
+      ])
       clearInterval(timerRef.current)
     })
 
     newSocket.on('game_end', (d) => {
       setPlayers(d.players)
-      addSystemMessage(`Winner: ${d.players[0].username}`)
       setGameStarted(false)
+      setMessages((p) => [
+        ...p,
+        {
+          username: 'System',
+          message: `Game Over! Winner: ${d.players[0].username}`,
+          type: 'system',
+        },
+      ])
+      clearInterval(timerRef.current)
     })
 
     /* ---------- DRAW EVENTS ---------- */
@@ -118,13 +138,13 @@ export default function GamePage() {
     newSocket.on('color_changed', (c) => setColor(c))
 
     /* ---------- CHAT ---------- */
-    newSocket.on('system_message', (d) =>
+    newSocket.on('system_message', (d) => {
       setMessages((p) => [...p, { username: 'System', message: d.text, type: 'correct' }])
-    )
+    })
 
-    newSocket.on('chat_message', (d) =>
+    newSocket.on('chat_message', (d) => {
       setMessages((p) => [...p, { username: d.username, message: d.message, type: 'guess' }])
-    )
+    })
 
     setSocket(newSocket)
 
@@ -138,11 +158,7 @@ export default function GamePage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  /* -------------------- HELPERS -------------------- */
-  const addSystemMessage = (message: string) => {
-    setMessages((p) => [...p, { username: 'System', message, type: 'system' }])
-  }
-
+  /* -------------------- ACTIONS -------------------- */
   const handleStrokeSent = (stroke: any) => {
     if (socket && isDrawer) {
       socket.emit('draw_stroke', {
@@ -174,54 +190,95 @@ export default function GamePage() {
     navigate('/')
   }
 
-  /* -------------------- UI -------------------- */
+  /* -------------------- UI (UNCHANGED) -------------------- */
   return (
     <div className="game-container">
+      {/* Header */}
       <div className="game-header">
-        <button onClick={handleLeaveRoom}>←</button>
-        <div>Room: {roomCode}</div>
-        {gameStarted && <div>Round {currentRound} • {timeLeft}s</div>}
+        <div className="header-left">
+          <button onClick={handleLeaveRoom} className="icon-button">
+            ←
+          </button>
+          <div>
+            <div className="room-code">Room: {roomCode}</div>
+            {gameStarted && (
+              <div className="round-info">
+                Round {currentRound} • {timeLeft}s
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      <div className="players-list">
-        {players.map(p => (
-          <div key={p.sid}>{p.username} — {p.score}</div>
-        ))}
-      </div>
-
-      <div className="main-content">
-        <div className="canvas-container">
-          {isDrawer && (
-            <div className="tools">
-              <button onClick={handleUndo}>↩️</button>
-              <button onClick={handleRedo}>↪️</button>
-              <input type="color" value={color} onChange={e => handleColorChange(e.target.value)} />
+      {/* Players List */}
+      <div className="players-container">
+        <div className="players-list">
+          {players.map((player) => (
+            <div key={player.sid} className="player-card">
+              <div className={`player-avatar ${isDrawer && player.sid === socket?.id ? 'drawer' : ''}`}>
+                {player.username.charAt(0).toUpperCase()}
+              </div>
+              <div className="player-name">{player.username}</div>
+              <div className="player-score">{player.score}</div>
             </div>
-          )}
-
-          <Canvas
-            ref={canvasRef}
-            canDraw={isDrawer}
-            onStrokeSent={handleStrokeSent}
-          />
-        </div>
-
-        {gameStarted && !isDrawer && (
-          <form onSubmit={handleSendGuess}>
-            <input
-              value={guessInput}
-              onChange={e => setGuessInput(e.target.value)}
-              placeholder="Type guess..."
-            />
-          </form>
-        )}
-
-        <div className="messages">
-          {messages.map((m, i) => (
-            <div key={i}>{m.username}: {m.message}</div>
           ))}
-          <div ref={messagesEndRef} />
         </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="main-content">
+        {/* Canvas */}
+        <div className="canvas-container">
+          {gameStarted && (
+            <>
+              {isDrawer && (
+                <div className="tools">
+                  <button onClick={handleUndo}>↩️</button>
+                  <button onClick={handleRedo}>↪️</button>
+                  <input
+                    type="color"
+                    value={color}
+                    onChange={(e) => handleColorChange(e.target.value)}
+                  />
+                </div>
+              )}
+
+              <Canvas
+                ref={canvasRef}
+                canDraw={isDrawer}
+                onStrokeSent={handleStrokeSent}
+              />
+            </>
+          )}
+        </div>
+
+        {/* Chat */}
+        {gameStarted && (
+          <div className="chat-sidebar">
+            <div className="messages-list">
+              {messages.map((msg, i) => (
+                <div key={i} className={`message-item ${msg.type}`}>
+                  {msg.type === 'guess' ? (
+                    <strong>{msg.username}: </strong>
+                  ) : null}
+                  {msg.message}
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {!isDrawer && (
+              <form className="input-form" onSubmit={handleSendGuess}>
+                <input
+                  className="guess-input"
+                  value={guessInput}
+                  onChange={(e) => setGuessInput(e.target.value)}
+                  placeholder="Type your guess..."
+                />
+              </form>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
