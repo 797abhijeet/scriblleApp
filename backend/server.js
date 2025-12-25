@@ -13,9 +13,7 @@ server.keepAliveTimeout = 120000;
 server.headersTimeout = 120000;
 
 const io = new Server(server, {
-  cors: {
-    origin: "*",
-  },
+  cors: { origin: "*" },
   transports: ["websocket"],
 });
 
@@ -49,22 +47,63 @@ function distanceKm(lat1, lng1, lat2, lng2) {
 function findNearbyPlayer(myId, lat, lng) {
   for (const [sid, data] of playersSearching.entries()) {
     if (sid === myId) continue;
-
-    const dist = distanceKm(lat, lng, data.lat, data.lng);
-    if (dist <= NEARBY_RADIUS_KM) {
-      return { sid, ...data, distance: dist };
+    if (distanceKm(lat, lng, data.lat, data.lng) <= NEARBY_RADIUS_KM) {
+      return { sid, ...data };
     }
   }
   return null;
 }
 
 /* =======================
-   Socket.IO
+   SOCKET.IO
 ======================= */
 io.on("connection", (socket) => {
   console.log("✅ Connected:", socket.id);
 
-  /* -------- FIND NEARBY -------- */
+  /* ---------- CREATE ROOM ---------- */
+  socket.on("create_room", ({ room_code, username }) => {
+    if (gameRooms.has(room_code)) {
+      return socket.emit("error", { message: "Room already exists" });
+    }
+
+    gameRooms.set(room_code, {
+      players: [{ sid: socket.id, username, score: 0 }],
+    });
+
+    socket.join(room_code);
+
+    socket.emit("room_created", {
+      players: gameRooms.get(room_code).players,
+    });
+
+    console.log("🏠 Room created:", room_code);
+  });
+
+  /* ---------- JOIN ROOM ---------- */
+  socket.on("join_room", ({ room_code, username }) => {
+    const room = gameRooms.get(room_code);
+
+    if (!room) {
+      return socket.emit("error", { message: "Room not found" });
+    }
+
+    if (room.players.some((p) => p.sid === socket.id)) return;
+
+    room.players.push({ sid: socket.id, username, score: 0 });
+    socket.join(room_code);
+
+    io.to(room_code).emit("player_joined", {
+      players: room.players,
+    });
+
+    socket.emit("room_joined", {
+      players: room.players,
+    });
+
+    console.log("➕ Joined room:", room_code);
+  });
+
+  /* ---------- NEARBY MATCH ---------- */
   socket.on("find_nearby_match", ({ lat, lng, username }) => {
     const match = findNearbyPlayer(socket.id, lat, lng);
 
@@ -79,56 +118,64 @@ io.on("connection", (socket) => {
           { sid: socket.id, username, score: 0 },
           { sid: match.sid, username: match.username, score: 0 },
         ],
-        currentDrawerIndex: 0,
       });
 
-      // 🔥 Send match to BOTH sockets
+      socket.join(roomCode);
+      io.sockets.sockets.get(match.sid)?.join(roomCode);
+
       socket.emit("match_found", {
         roomCode,
         matchedWith: match.username,
-        distance: match.distance.toFixed(1),
       });
 
       io.to(match.sid).emit("match_found", {
         roomCode,
         matchedWith: username,
-        distance: match.distance.toFixed(1),
       });
 
-      console.log("📍 Nearby match created:", roomCode);
+      console.log("📍 Nearby room created:", roomCode);
     } else {
       playersSearching.set(socket.id, { lat, lng, username });
-      socket.emit("searching", {
-        message: "Searching for nearby players...",
-      });
+      socket.emit("searching");
     }
   });
 
-  /* -------- CANCEL SEARCH -------- */
   socket.on("cancel_search", () => {
     playersSearching.delete(socket.id);
-    console.log("❌ Nearby search cancelled:", socket.id);
   });
 
+  /* ---------- DISCONNECT CLEANUP ---------- */
   socket.on("disconnect", () => {
     playersSearching.delete(socket.id);
+
+    for (const [code, room] of gameRooms.entries()) {
+      room.players = room.players.filter((p) => p.sid !== socket.id);
+
+      if (room.players.length === 0) {
+        gameRooms.delete(code);
+      } else {
+        io.to(code).emit("player_left", {
+          players: room.players,
+        });
+      }
+    }
+
     console.log("❌ Disconnected:", socket.id);
   });
 });
 
 /* =======================
-   Health
+   HEALTH
 ======================= */
 app.get("/health", (_, res) => {
   res.json({
-    status: "ok",
-    searching: playersSearching.size,
     rooms: gameRooms.size,
+    searching: playersSearching.size,
   });
 });
 
 /* =======================
-   Start Server
+   START
 ======================= */
 const PORT = process.env.PORT || 10000;
 server.listen(PORT, "0.0.0.0", () =>

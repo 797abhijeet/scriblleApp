@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { io, Socket } from 'socket.io-client'
 import '../styles/HomePage.css'
@@ -6,272 +6,152 @@ import '../styles/HomePage.css'
 export default function HomePage() {
   const [username, setUsername] = useState('')
   const [roomCode, setRoomCode] = useState('')
-  const [mode, setMode] = useState<'menu' | 'create' | 'join' | 'nearby'>('menu')
   const [searchingNearby, setSearchingNearby] = useState(false)
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null)
-  const [socket, setSocket] = useState<Socket | null>(null)
+
+  const socketRef = useRef<Socket | null>(null)
   const navigate = useNavigate()
 
   const backendUrl =
     window.location.hostname === 'localhost'
-      ? 'http://localhost:8001'
+      ? 'http://localhost:10000'
       : 'https://scriblleapp.onrender.com'
 
-
+  /* ======================
+     SOCKET INIT (ONCE)
+  ======================= */
   useEffect(() => {
-    // Request location permission on mount
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          })
-        },
-        (error) => {
-          console.log('Location permission denied:', error)
-        }
+    const socket = io(backendUrl, {
+      transports: ['websocket'],
+      upgrade: false,
+    })
+
+    socketRef.current = socket
+
+    socket.on('connect', () => {
+      console.log('✅ Connected:', socket.id)
+    })
+
+    socket.on('searching', () => {
+      console.log('🔍 Searching nearby...')
+    })
+
+    socket.on('match_found', (data) => {
+      setSearchingNearby(false)
+
+      const confirmed = window.confirm(
+        `Matched with ${data.matchedWith}. Join game?`
       )
+
+      if (confirmed) {
+        navigate(`/game?username=${username}&roomCode=${data.roomCode}`)
+      }
+    })
+
+    socket.on('error', (err) => {
+      alert(err.message)
+      setSearchingNearby(false)
+    })
+
+    return () => {
+      socket.disconnect()
     }
+  }, [backendUrl, navigate, username])
+
+  /* ======================
+     LOCATION
+  ======================= */
+  useEffect(() => {
+    if (!navigator.geolocation) return
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) =>
+        setLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        }),
+      () => alert('Location permission denied')
+    )
   }, [])
 
-  const generateRoomCode = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-    let code = ''
-    for (let i = 0; i < 6; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length))
-    }
-    return code
-  }
-
-  const handleCreateRoom = () => {
-    if (!username.trim()) {
-      alert('Please enter a username')
-      return
-    }
-    const code = generateRoomCode()
-    navigate(`/game?username=${username}&roomCode=${code}&isHost=true`)
-  }
-
-  const handleJoinRoom = () => {
-    if (!username.trim()) {
-      alert('Please enter a username')
-      return
-    }
-    if (!roomCode.trim()) {
-      alert('Please enter a room code')
-      return
-    }
-    navigate(`/game?username=${username}&roomCode=${roomCode.toUpperCase()}&isHost=false`)
-  }
-
+  /* ======================
+     NEARBY MATCH
+  ======================= */
   const handleFindNearby = () => {
-    if (!username.trim()) {
-      alert('Please enter a username')
-      return
-    }
-
-    if (!navigator.geolocation) {
-      alert('Geolocation not supported')
-      return
-    }
+    if (!username.trim()) return alert('Enter username')
+    if (!location) return alert('Location not available')
 
     setSearchingNearby(true)
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const userLocation = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        }
-
-        const newSocket = io(backendUrl, {
-          transports: ['websocket'],
-          upgrade: false,
-        })
-
-        newSocket.on('connect', () => {
-          newSocket.emit('find_nearby_match', {
-            lat: userLocation.lat,
-            lng: userLocation.lng,
-            username
-          })
-        })
-
-        newSocket.on('searching', () => {
-          console.log('🔍 Searching nearby...')
-        })
-
-        newSocket.on('match_found', (data) => {
-          setSearchingNearby(false)
-
-          const confirmed = window.confirm(
-            `Match found with ${data.matchedWith} (${data.distance} km away). Join game?`
-          )
-
-          if (confirmed) {
-            newSocket.disconnect()
-            navigate(`/game?username=${username}&roomCode=${data.roomCode}&isHost=false`)
-          }
-        })
-
-        newSocket.on('error', (err) => {
-          setSearchingNearby(false)
-          alert(err.message)
-          newSocket.disconnect()
-        })
-
-        setSocket(newSocket)
-      },
-      () => {
-        setSearchingNearby(false)
-        alert('Location permission required')
-      }
-    )
+    socketRef.current?.emit('find_nearby_match', {
+      lat: location.lat,
+      lng: location.lng,
+      username,
+    })
   }
 
-
-  const handleCancelSearch = () => {
-    if (socket) {
-      socket.emit('cancel_search')
-      socket.disconnect()
-      setSocket(null)
-    }
+  const cancelSearch = () => {
+    socketRef.current?.emit('cancel_search')
     setSearchingNearby(false)
-    setMode('menu')
   }
 
+  /* ======================
+     NORMAL ROOMS
+  ======================= */
+  const generateRoomCode = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+    return Array.from({ length: 6 }, () =>
+      chars[Math.floor(Math.random() * chars.length)]
+    ).join('')
+  }
+
+  const createRoom = () => {
+    if (!username.trim()) return alert('Enter username')
+    const code = generateRoomCode()
+    navigate(`/game?username=${username}&roomCode=${code}`)
+  }
+
+  const joinRoom = () => {
+    if (!username.trim() || !roomCode.trim())
+      return alert('Fill all fields')
+    navigate(`/game?username=${username}&roomCode=${roomCode}`)
+  }
+
+  /* ======================
+     UI
+  ======================= */
   if (searchingNearby) {
     return (
       <div className="home-container">
-        <div className="content">
-          <div className="searching-container">
-            <div className="icon">📍</div>
-            <div className="loader"></div>
-            <h2 className="searching-text">Finding Nearby Players...</h2>
-            <p className="searching-subtext">Searching within 50km radius</p>
-            {location && (
-              <p className="location-text">
-                📍 Your location: {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
-              </p>
-            )}
-
-            <button className="cancel-button" onClick={handleCancelSearch}>
-              Cancel Search
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (mode === 'menu') {
-    return (
-      <div className="home-container">
-        <div className="content">
-          <div className="header">
-            <div className="icon">🎨</div>
-            <h1 className="title">Scribble</h1>
-            <p className="subtitle">Draw, Guess & Have Fun!</p>
-          </div>
-
-          <div className="button-container">
-            <button className="primary-button" onClick={() => setMode('nearby')}>
-              <span className="button-icon">📍</span>
-              Find Nearby Players
-            </button>
-
-            <div className="divider">
-              <div className="divider-line"></div>
-              <span className="divider-text">OR</span>
-              <div className="divider-line"></div>
-            </div>
-
-            <button className="secondary-button" onClick={() => setMode('create')}>
-              <span className="button-icon">➕</span>
-              Create Room
-            </button>
-
-            <button className="secondary-button" onClick={() => setMode('join')}>
-              <span className="button-icon">🚪</span>
-              Join with Code
-            </button>
-          </div>
-
-          <div className="footer">
-            <p className="footer-text">Made with ❤️ for Scribble lovers</p>
-          </div>
-        </div>
+        <h2>📍 Finding Nearby Players...</h2>
+        <button onClick={cancelSearch}>Cancel</button>
       </div>
     )
   }
 
   return (
     <div className="home-container">
-      <div className="content">
-        <button className="back-button" onClick={() => setMode('menu')}>
-          ← Back
-        </button>
+      <h1>Scribble Game</h1>
 
-        <div className="form-header">
-          <div className="icon">
-            {mode === 'create' ? '➕' : mode === 'nearby' ? '📍' : '🚪'}
-          </div>
-          <h2 className="form-title">
-            {mode === 'create' ? 'Create Room' : mode === 'nearby' ? 'Find Nearby' : 'Join Room'}
-          </h2>
-        </div>
+      <input
+        placeholder="Username"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+      />
 
-        <div className="form">
-          <div className="input-container">
-            <span className="input-icon">👤</span>
-            <input
-              className="input"
-              type="text"
-              placeholder="Enter your username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              maxLength={20}
-            />
-          </div>
+      <button onClick={createRoom}>Create Room</button>
 
-          {mode === 'join' && (
-            <div className="input-container">
-              <span className="input-icon">🔑</span>
-              <input
-                className="input"
-                type="text"
-                placeholder="Enter room code"
-                value={roomCode}
-                onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                maxLength={6}
-              />
-            </div>
-          )}
+      <input
+        placeholder="Room Code"
+        value={roomCode}
+        onChange={(e) => setRoomCode(e.target.value)}
+      />
 
-          {mode === 'nearby' && (
-            <div className="info-box">
-              <span className="info-icon">ℹ️</span>
-              <p className="info-text">
-                We'll find players near you (within 50km) who are also looking for a game!
-              </p>
-            </div>
-          )}
+      <button onClick={joinRoom}>Join Room</button>
 
-          <button
-            className="primary-button"
-            onClick={
-              mode === 'create'
-                ? handleCreateRoom
-                : mode === 'nearby'
-                  ? handleFindNearby
-                  : handleJoinRoom
-            }
-          >
-            {mode === 'create' ? 'Create Room' : mode === 'nearby' ? 'Find Match' : 'Join Room'}
-          </button>
-        </div>
-      </div>
+      <hr />
+
+      <button onClick={handleFindNearby}>Find Nearby Player</button>
     </div>
   )
 }
