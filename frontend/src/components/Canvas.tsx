@@ -33,6 +33,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(
       { x: number; y: number }[]
     >([])
 
+    const [currentColor, setCurrentColor] = useState('#000000') // 🎨 NEW
     const canvasSizeRef = useRef({ width: 0, height: 0 })
 
     /* ======================
@@ -58,7 +59,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(
         if (ctx) {
           ctx.lineCap = 'round'
           ctx.lineJoin = 'round'
-          ctx.strokeStyle = '#000000'
           ctx.lineWidth = 3
           contextRef.current = ctx
         }
@@ -66,7 +66,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(
 
       resizeCanvas()
       window.addEventListener('resize', resizeCanvas)
-
       return () => window.removeEventListener('resize', resizeCanvas)
     }, [])
 
@@ -85,6 +84,9 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(
       drawStroke(stroke: Stroke) {
         const ctx = contextRef.current
         if (!ctx || !canvasSizeRef.current.width) return
+
+        ctx.strokeStyle = stroke.color // 🎨 APPLY COLOR
+        ctx.lineWidth = stroke.width
 
         ctx.beginPath()
         stroke.points.forEach((p, i) => {
@@ -119,8 +121,11 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(
       setCurrentStroke([{ x, y }])
 
       const ctx = contextRef.current
-      ctx?.beginPath()
-      ctx?.moveTo(x, y)
+      if (!ctx) return
+
+      ctx.strokeStyle = currentColor // 🎨 USE SELECTED COLOR
+      ctx.beginPath()
+      ctx.moveTo(x, y)
     }
 
     const move = (x: number, y: number) => {
@@ -146,7 +151,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(
 
         onStrokeSent({
           points: normalized,
-          color: '#000000',
+          color: currentColor, // 🎨 SEND COLOR
           width: 3,
         })
       }
@@ -168,7 +173,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(
     }
 
     /* ======================
-       Touch Events (Mobile)
+       Touch Events
     ====================== */
     const onTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
       e.preventDefault()
@@ -190,17 +195,30 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(
     }
 
     return (
-      <canvas
-        ref={canvasRef}
-        className="drawing-canvas"
-        onMouseDown={onMouseDown}
-        onMouseMove={onMouseMove}
-        onMouseUp={end}
-        onMouseLeave={end}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-      />
+      <div className="canvas-wrapper">
+        {/* 🎨 COLOR PICKER (ONLY FOR DRAWER) */}
+        {canDraw && (
+          <div className="color-picker">
+            <input
+              type="color"
+              value={currentColor}
+              onChange={(e) => setCurrentColor(e.target.value)}
+            />
+          </div>
+        )}
+
+        <canvas
+          ref={canvasRef}
+          className="drawing-canvas"
+          onMouseDown={onMouseDown}
+          onMouseMove={onMouseMove}
+          onMouseUp={end}
+          onMouseLeave={end}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        />
+      </div>
     )
   }
 )
