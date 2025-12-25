@@ -65,6 +65,12 @@ export default function GamePage() {
         })
       }
     })
+    newSocket.on('host_changed', (data) => {
+      addSystemMessage(
+        `${data.newHostUsername} is now the room host 👑`
+      )
+    })
+
 
     newSocket.on('room_created', (data) => {
       setPlayers(data.players)
@@ -245,7 +251,7 @@ export default function GamePage() {
       <div className="game-header">
         <div className="header-left">
           <button onClick={handleLeaveRoom} className="icon-button">
-            ← 
+            ←
           </button>
           <div>
             <div className="room-code">Room: {roomCode}</div>
