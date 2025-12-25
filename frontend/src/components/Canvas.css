@@ -1,22 +1,5 @@
-.canvas-wrapper {
-  position: relative;
+.drawing-canvas {
   width: 100%;
   height: 100%;
-}
-
-.color-picker {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 5;
-  background: rgba(255, 255, 255, 0.9);
-  padding: 4px;
-  border-radius: 6px;
-}
-
-.color-picker input {
-  width: 36px;
-  height: 36px;
-  border: none;
-  cursor: pointer;
+  touch-action: none;
 }
