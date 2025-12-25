@@ -1,10 +1,4 @@
-import {
-  forwardRef,
-  useImperativeHandle,
-  useRef,
-  useEffect,
-  useState,
-} from 'react'
+import { forwardRef, useImperativeHandle, useRef, useState, useEffect } from 'react'
 import '../styles/Canvas.css'
 
 interface Stroke {
@@ -23,157 +17,139 @@ export interface CanvasRef {
   drawStroke: (stroke: Stroke) => void
 }
 
-const Canvas = forwardRef<CanvasRef, CanvasProps>(
-  ({ canDraw, onStrokeSent }, ref) => {
-    const canvasRef = useRef<HTMLCanvasElement>(null)
-    const contextRef = useRef<CanvasRenderingContext2D | null>(null)
-    const strokeRef = useRef<{ x: number; y: number }[]>([])
-    const [isDrawing, setIsDrawing] = useState(false)
-    const canvasSizeRef = useRef({ width: 0, height: 0 })
+const Canvas = forwardRef<CanvasRef, CanvasProps>(({ canDraw, onStrokeSent }, ref) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [isDrawing, setIsDrawing] = useState(false)
+  const [currentStroke, setCurrentStroke] = useState<{ x: number; y: number }[]>([])
+  const contextRef = useRef<CanvasRenderingContext2D | null>(null)
+  const canvasSizeRef = useRef({ width: 0, height: 0 })
 
-    /* -------------------- Canvas Setup -------------------- */
-    useEffect(() => {
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const resizeCanvas = () => {
+      const container = canvas.parentElement
+      if (!container) return
+
+      canvas.width = container.clientWidth
+      canvas.height = container.clientHeight
+      canvasSizeRef.current = { width: canvas.width, height: canvas.height }
+
+      const context = canvas.getContext('2d')
+      if (context) {
+        context.lineCap = 'round'
+        context.lineJoin = 'round'
+        context.strokeStyle = '#000000'
+        context.lineWidth = 3
+        contextRef.current = context
+      }
+    }
+
+    resizeCanvas()
+    window.addEventListener('resize', resizeCanvas)
+
+    return () => {
+      window.removeEventListener('resize', resizeCanvas)
+    }
+  }, [])
+
+  useImperativeHandle(ref, () => ({
+    clear: () => {
       const canvas = canvasRef.current
-      if (!canvas) return
-
-      const resizeCanvas = () => {
-        const container = canvas.parentElement
-        if (!container) return
-
-        const ratio = window.devicePixelRatio || 1
-
-        canvas.width = container.clientWidth * ratio
-        canvas.height = container.clientHeight * ratio
-        canvas.style.width = `${container.clientWidth}px`
-        canvas.style.height = `${container.clientHeight}px`
-
-        const ctx = canvas.getContext('2d')
-        if (!ctx) return
-
-        ctx.setTransform(ratio, 0, 0, ratio, 0, 0)
-        ctx.lineCap = 'round'
-        ctx.lineJoin = 'round'
-
-        contextRef.current = ctx
-        canvasSizeRef.current = {
-          width: container.clientWidth,
-          height: container.clientHeight,
-        }
+      const context = contextRef.current
+      if (canvas && context) {
+        context.clearRect(0, 0, canvas.width, canvas.height)
       }
+    },
+    drawStroke: (stroke: Stroke) => {
+      const context = contextRef.current
+      if (!context || !canvasSizeRef.current.width) return
 
-      resizeCanvas()
-      window.addEventListener('resize', resizeCanvas)
-      return () => window.removeEventListener('resize', resizeCanvas)
-    }, [])
-
-    /* -------------------- Helpers -------------------- */
-    const getPos = (e: any) => {
-      const rect = canvasRef.current!.getBoundingClientRect()
-
-      if (e.touches) {
-        return {
-          x: e.touches[0].clientX - rect.left,
-          y: e.touches[0].clientY - rect.top,
+      context.beginPath()
+      stroke.points.forEach((point, index) => {
+        const x = point.x * canvasSizeRef.current.width
+        const y = point.y * canvasSizeRef.current.height
+        
+        if (index === 0) {
+          context.moveTo(x, y)
+        } else {
+          context.lineTo(x, y)
         }
-      }
+      })
+      context.stroke()
+    },
+  }))
 
-      return {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
-      }
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!canDraw) return
+
+    setIsDrawing(true)
+    const rect = canvasRef.current?.getBoundingClientRect()
+    if (!rect) return
+
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    setCurrentStroke([{ x, y }])
+
+    const context = contextRef.current
+    if (context) {
+      context.beginPath()
+      context.moveTo(x, y)
     }
+  }
 
-    /* -------------------- Exposed Methods -------------------- */
-    useImperativeHandle(ref, () => ({
-      clear() {
-        const canvas = canvasRef.current
-        const ctx = contextRef.current
-        if (canvas && ctx) {
-          ctx.clearRect(0, 0, canvas.width, canvas.height)
-        }
-      },
+  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDrawing || !canDraw) return
 
-      drawStroke(stroke: Stroke) {
-        const ctx = contextRef.current
-        if (!ctx) return
+    const rect = canvasRef.current?.getBoundingClientRect()
+    if (!rect) return
 
-        ctx.save()
-        ctx.beginPath()
-        ctx.strokeStyle = stroke.color
-        ctx.lineWidth = stroke.width
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    setCurrentStroke((prev) => [...prev, { x, y }])
 
-        stroke.points.forEach((p, i) => {
-          const x = p.x * canvasSizeRef.current.width
-          const y = p.y * canvasSizeRef.current.height
-          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
-        })
-
-        ctx.stroke()
-        ctx.restore()
-      },
-    }))
-
-    /* -------------------- Drawing Logic -------------------- */
-    const startDrawing = (e: any) => {
-      if (!canDraw) return
-      e.preventDefault()
-
-      const { x, y } = getPos(e)
-      strokeRef.current = [{ x, y }]
-      setIsDrawing(true)
-
-      contextRef.current?.beginPath()
-      contextRef.current?.moveTo(x, y)
+    const context = contextRef.current
+    if (context) {
+      context.lineTo(x, y)
+      context.stroke()
     }
+  }
 
-    const draw = (e: any) => {
-      if (!isDrawing || !canDraw) return
-      e.preventDefault()
+  const stopDrawing = () => {
+    if (!isDrawing || !canDraw) return
 
-      const { x, y } = getPos(e)
-      strokeRef.current.push({ x, y })
+    setIsDrawing(false)
 
-      contextRef.current?.lineTo(x, y)
-      contextRef.current?.stroke()
-    }
-
-    const stopDrawing = (e?: any) => {
-      if (!isDrawing || !canDraw) return
-      e?.preventDefault()
-
-      setIsDrawing(false)
-      if (strokeRef.current.length === 0) return
-
-      const normalized = strokeRef.current.map(p => ({
-        x: p.x / canvasSizeRef.current.width,
-        y: p.y / canvasSizeRef.current.height,
+    if (currentStroke.length > 0 && canvasSizeRef.current.width > 0) {
+      // Normalize coordinates
+      const normalizedPoints = currentStroke.map((point) => ({
+        x: point.x / canvasSizeRef.current.width,
+        y: point.y / canvasSizeRef.current.height,
       }))
 
-      // 🔥 DO NOT HARD-CODE COLOR OR WIDTH
       onStrokeSent({
-        points: normalized,
-        color: contextRef.current?.strokeStyle as string,
-        width: contextRef.current?.lineWidth || 3,
+        points: normalizedPoints,
+        color: '#000000',
+        width: 3,
       })
-
-      strokeRef.current = []
     }
 
-    return (
-      <canvas
-        ref={canvasRef}
-        className="drawing-canvas" // ✅ SAME AS BEFORE
-        onMouseDown={startDrawing}
-        onMouseMove={draw}
-        onMouseUp={stopDrawing}
-        onMouseLeave={stopDrawing}
-        onTouchStart={startDrawing}
-        onTouchMove={draw}
-        onTouchEnd={stopDrawing}
-      />
-    )
+    setCurrentStroke([])
   }
-)
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="drawing-canvas"
+      onMouseDown={startDrawing}
+      onMouseMove={draw}
+      onMouseUp={stopDrawing}
+      onMouseLeave={stopDrawing}
+    />
+  )
+})
 
 Canvas.displayName = 'Canvas'
+
 export default Canvas

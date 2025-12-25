@@ -12,29 +12,28 @@ export default function HomePage() {
   const [socket, setSocket] = useState<Socket | null>(null)
   const navigate = useNavigate()
 
-  const backendUrl =
+   const backendUrl =
     window.location.hostname === 'localhost'
       ? 'http://localhost:8001'
-      : 'https://scriblleapp.onrender.com'
+      : 'https://scriblleapp.onrender.com';
 
-  /* -------------------- LOCATION -------------------- */
   useEffect(() => {
-    if (!navigator.geolocation) return
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        })
-      },
-      (error) => {
-        console.log('Location permission denied:', error)
-      }
-    )
+    // Request location permission on mount
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          })
+        },
+        (error) => {
+          console.log('Location permission denied:', error)
+        }
+      )
+    }
   }, [])
 
-  /* -------------------- HELPERS -------------------- */
   const generateRoomCode = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
     let code = ''
@@ -44,7 +43,6 @@ export default function HomePage() {
     return code
   }
 
-  /* -------------------- ACTIONS -------------------- */
   const handleCreateRoom = () => {
     if (!username.trim()) {
       alert('Please enter a username')
@@ -83,21 +81,24 @@ export default function HomePage() {
       (position) => {
         const userLocation = {
           lat: position.coords.latitude,
-          lng: position.coords.longitude,
+          lng: position.coords.longitude
         }
         setLocation(userLocation)
 
+        // Connect to Socket.IO
         const newSocket = io(backendUrl, {
           path: '/api/socket.io',
-          transports: ['websocket'], // ✅ FIXED (was polling)
+          transports: ['polling', 'websocket'],
           reconnection: true,
         })
 
         newSocket.on('connect', () => {
+          console.log('Connected to server for nearby search')
+          
           newSocket.emit('find_nearby_match', {
             lat: userLocation.lat,
             lng: userLocation.lng,
-            username,
+            username: username
           })
         })
 
@@ -106,19 +107,16 @@ export default function HomePage() {
         })
 
         newSocket.on('match_found', (data) => {
+          console.log('Match found!', data)
           setSearchingNearby(false)
-
+          
           const confirmed = window.confirm(
             `Match found with ${data.matchedWith} (${data.distance}km away). Join game?`
           )
-
+          
           if (confirmed) {
             newSocket.disconnect()
-            navigate(
-              `/game?username=${username}&roomCode=${data.roomCode}&isHost=false&matchType=nearby`
-            )
-          } else {
-            newSocket.emit('cancel_search')
+            navigate(`/game?username=${username}&roomCode=${data.roomCode}&isHost=false&matchType=nearby`)
           }
         })
 
@@ -147,7 +145,6 @@ export default function HomePage() {
     setMode('menu')
   }
 
-  /* -------------------- UI (UNCHANGED) -------------------- */
   if (searchingNearby) {
     return (
       <div className="home-container">
@@ -157,13 +154,12 @@ export default function HomePage() {
             <div className="loader"></div>
             <h2 className="searching-text">Finding Nearby Players...</h2>
             <p className="searching-subtext">Searching within 50km radius</p>
-
             {location && (
               <p className="location-text">
                 📍 Your location: {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
               </p>
             )}
-
+            
             <button className="cancel-button" onClick={handleCancelSearch}>
               Cancel Search
             </button>
@@ -218,7 +214,7 @@ export default function HomePage() {
     <div className="home-container">
       <div className="content">
         <button className="back-button" onClick={() => setMode('menu')}>
-          ←
+          ← 
         </button>
 
         <div className="form-header">
@@ -226,11 +222,7 @@ export default function HomePage() {
             {mode === 'create' ? '➕' : mode === 'nearby' ? '📍' : '🚪'}
           </div>
           <h2 className="form-title">
-            {mode === 'create'
-              ? 'Create Room'
-              : mode === 'nearby'
-              ? 'Find Nearby'
-              : 'Join Room'}
+            {mode === 'create' ? 'Create Room' : mode === 'nearby' ? 'Find Nearby' : 'Join Room'}
           </h2>
         </div>
 
@@ -273,18 +265,14 @@ export default function HomePage() {
           <button
             className="primary-button"
             onClick={
-              mode === 'create'
-                ? handleCreateRoom
-                : mode === 'nearby'
-                ? handleFindNearby
+              mode === 'create' 
+                ? handleCreateRoom 
+                : mode === 'nearby' 
+                ? handleFindNearby 
                 : handleJoinRoom
             }
           >
-            {mode === 'create'
-              ? 'Create Room'
-              : mode === 'nearby'
-              ? 'Find Match'
-              : 'Join Room'}
+            {mode === 'create' ? 'Create Room' : mode === 'nearby' ? 'Find Match' : 'Join Room'}
           </button>
         </div>
       </div>
