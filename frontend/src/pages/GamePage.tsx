@@ -41,14 +41,16 @@ export default function GamePage() {
   const backendUrl =
     window.location.hostname === 'localhost'
       ? 'http://localhost:8001'
-      : 'https://your-backend.onrender.com';
+      : 'https://scriblleapp.onrender.com';
 
   useEffect(() => {
     const newSocket = io(backendUrl, {
-      path: '/api/socket.io',
-      transports: ['polling', 'websocket'],
+      transports: ['websocket'], // REQUIRED for Render
       reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
     })
+
 
     newSocket.on('connect', () => {
       console.log('Connected to server')
