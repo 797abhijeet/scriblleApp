@@ -44,15 +44,25 @@ export default function HomePage() {
   }
 
   const handleCreateRoom = () => {
-    if (!username.trim()) return alert("Enter username");
-    navigate(`/game?username=${username}&isHost=true`);
-  };
+    if (!username.trim()) {
+      alert('Please enter a username')
+      return
+    }
+    const code = generateRoomCode()
+    navigate(`/game?username=${username}&roomCode=${code}&isHost=true`)
+  }
 
   const handleJoinRoom = () => {
-    if (!username || !roomCode) return alert("Missing info");
-    navigate(`/game?username=${username}&roomCode=${roomCode}&isHost=false`);
-  };
-
+    if (!username.trim()) {
+      alert('Please enter a username')
+      return
+    }
+    if (!roomCode.trim()) {
+      alert('Please enter a room code')
+      return
+    }
+    navigate(`/game?username=${username}&roomCode=${roomCode.toUpperCase()}&isHost=false`)
+  }
 
   const handleFindNearby = () => {
     if (!username.trim()) {
