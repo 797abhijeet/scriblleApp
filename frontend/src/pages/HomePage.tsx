@@ -213,19 +213,19 @@ export default function HomePage() {
           </div>
 
           <div className="flex flex-col gap-4 animate-slideUp animation-delay-400">
-            <button 
+            {/* <button 
               className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white px-8 py-5 rounded-2xl text-lg font-semibold cursor-pointer flex items-center justify-center gap-3 shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden"
               onClick={() => setMode('nearby')}
             >
               <span className="text-2xl drop-shadow">📍</span>
               Find Nearby Players
-            </button>
+            </button> */}
 
-            <div className="flex items-center my-2 opacity-70">
+            {/* <div className="flex items-center my-2 opacity-70">
               <div className="flex-1 h-px bg-white/30"></div>
               <span className="mx-4 text-white/80 text-sm font-semibold tracking-wider">OR</span>
               <div className="flex-1 h-px bg-white/30"></div>
-            </div>
+            </div> */}
 
             <button 
               className="bg-white/95 hover:bg-white text-indigo-500 px-8 py-5 rounded-2xl text-lg font-semibold cursor-pointer flex items-center justify-center gap-3 backdrop-blur-sm border-2 border-white/30 shadow-lg hover:-translate-y-1 transition-all duration-300"
