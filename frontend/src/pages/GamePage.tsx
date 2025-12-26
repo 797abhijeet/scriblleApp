@@ -549,7 +549,7 @@ export default function GamePage() {
                   <div className="bg-gradient-to-br from-blue-500/20 to-blue-700/20 border-2 border-blue-500 rounded-xl p-4 mb-2.5">
                     <span className="block mb-1 text-sm opacity-80">🔍 Guess the word:</span>
                     <span className="text-2xl font-bold tracking-wider">
-                      {wordMask.split('').map((char, index) => (
+                      {wordMask.split('').map((char) => (
                         char === '_' ? '_ ' : char + ' '
                       ))}
                     </span>

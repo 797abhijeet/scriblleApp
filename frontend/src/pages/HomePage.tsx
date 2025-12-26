@@ -153,7 +153,7 @@ export default function HomePage() {
 
         setSocket(newSocket)
       },
-      (error) => {
+      () => {
         setSearchingNearby(false)
         alert('Please enable location access to find nearby players')
       }
