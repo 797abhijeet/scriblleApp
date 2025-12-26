@@ -47,10 +47,320 @@ const io = new Server(server, {
 
 // Word bank
 const WORD_BANK = [
-  "cat", "dog", "house", "tree", "car", "sun", "moon", "star", "flower", "bird",
-  "fish", "book", "phone", "computer", "guitar", "piano", "camera", "bicycle",
-  "umbrella", "chair", "table", "cup", "bottle", "shoe", "hat", "clock",
+  // Original words (26)
+  "cat",
+  "dog",
+  "house",
+  "tree",
+  "car",
+  "sun",
+  "moon",
+  "star",
+  "flower",
+  "bird",
+  "fish",
+  "book",
+  "phone",
+  "computer",
+  "guitar",
+  "piano",
+  "camera",
+  "bicycle",
+  "umbrella",
+  "chair",
+  "table",
+  "cup",
+  "bottle",
+  "shoe",
+  "hat",
+  "clock",
+
+  // Animals (25)
+  "lion",
+  "bear",
+  "frog",
+  "owl",
+  "bee",
+  "fox",
+  "duck",
+  "pig",
+  "cow",
+  "horse",
+  "rabbit",
+  "mouse",
+  "sheep",
+  "goat",
+  "snake",
+  "whale",
+  "shark",
+  "turtle",
+  "crab",
+  "butterfly",
+  "spider",
+  "ant",
+  "elephant",
+  "giraffe",
+  "monkey",
+
+  // Nature & Weather (25)
+  "cloud",
+  "rain",
+  "snow",
+  "wind",
+  "storm",
+  "river",
+  "mountain",
+  "ocean",
+  "beach",
+  "forest",
+  "leaf",
+  "grass",
+  "rock",
+  "fire",
+  "ice",
+  "wave",
+  "island",
+  "desert",
+  "cave",
+  "volcano",
+  "rainbow",
+  "lightning",
+  "thunder",
+  "fog",
+  "dew",
+
+  // Food & Drink (25)
+  "apple",
+  "banana",
+  "cake",
+  "pizza",
+  "burger",
+  "fries",
+  "cookie",
+  "donut",
+  "ice cream",
+  "sandwich",
+  "cheese",
+  "bread",
+  "egg",
+  "milk",
+  "juice",
+  "coffee",
+  "tea",
+  "water",
+  "soda",
+  "pasta",
+  "rice",
+  "soup",
+  "salad",
+  "chocolate",
+  "candy",
+
+  // Household Items (25)
+  "bed",
+  "sofa",
+  "lamp",
+  "door",
+  "window",
+  "mirror",
+  "brush",
+  "key",
+  "lock",
+  "pen",
+  "pencil",
+  "paper",
+  "bag",
+  "box",
+  "ball",
+  "toy",
+  "game",
+  "tv",
+  "radio",
+  "fan",
+  "oven",
+  "fridge",
+  "sink",
+  "toilet",
+  "shower",
+
+  // Clothing & Accessories (20)
+  "shirt",
+  "pants",
+  "dress",
+  "skirt",
+  "jacket",
+  "coat",
+  "sock",
+  "glove",
+  "scarf",
+  "belt",
+  "watch",
+  "ring",
+  "necklace",
+  "glasses",
+  "purse",
+  "wallet",
+  "tie",
+  "boot",
+  "sandal",
+  "sunglasses",
+
+  // Transportation (20)
+  "bus",
+  "train",
+  "plane",
+  "boat",
+  "ship",
+  "truck",
+  "motorcycle",
+  "helicopter",
+  "rocket",
+  "submarine",
+  "taxi",
+  "van",
+  "ambulance",
+  "firetruck",
+  "police car",
+  "scooter",
+  "skateboard",
+  "wagon",
+  "tractor",
+  "jetski",
+
+  // People & Body Parts (20)
+  "baby",
+  "child",
+  "woman",
+  "man",
+  "family",
+  "friend",
+  "hand",
+  "foot",
+  "head",
+  "face",
+  "eye",
+  "nose",
+  "mouth",
+  "ear",
+  "hair",
+  "heart",
+  "bone",
+  "tooth",
+  "leg",
+  "arm",
+
+  // Buildings & Places (20)
+  "school",
+  "store",
+  "hospital",
+  "restaurant",
+  "hotel",
+  "bank",
+  "park",
+  "zoo",
+  "farm",
+  "castle",
+  "bridge",
+  "tower",
+  "tent",
+  "pyramid",
+  "statue",
+  "fountain",
+  "library",
+  "museum",
+  "factory",
+  "apartment",
+
+  // Shapes & Colors (20)
+  "circle",
+  "square",
+  "triangle",
+  "rectangle",
+  "oval",
+  "diamond",
+  "heart shape",
+  "star shape",
+  "arrow",
+  "line",
+  "red",
+  "blue",
+  "green",
+  "yellow",
+  "orange",
+  "purple",
+  "pink",
+  "black",
+  "white",
+  "brown",
+
+  // Tools & Objects (20)
+  "hammer",
+  "nail",
+  "screwdriver",
+  "scissors",
+  "knife",
+  "fork",
+  "spoon",
+  "plate",
+  "bowl",
+  "pot",
+  "pan",
+  "broom",
+  "bucket",
+  "ladder",
+  "rope",
+  "chain",
+  "hook",
+  "flag",
+  "balloon",
+  "kite",
+
+  // Fantasy & Entertainment (20)
+  "dragon",
+  "unicorn",
+  "robot",
+  "alien",
+  "ghost",
+  "wizard",
+  "fairy",
+  "pirate",
+  "crown",
+  "castle",
+  "magic",
+  "music",
+  "movie",
+  "camera",
+  "microphone",
+  "guitar",
+  "drum",
+  "trumpet",
+  "violin",
+  "harp",
+
+  // Sports & Activities (20)
+  "ball",
+  "bat",
+  "goal",
+  "net",
+  "racket",
+  "pool",
+  "slide",
+  "swing",
+  "jump",
+  "run",
+  "swim",
+  "dance",
+  "sing",
+  "paint",
+  "draw",
+  "read",
+  "write",
+  "cook",
+  "shop",
+  "hike",
 ];
+
+// Total words: 286 (26 original + 260 new)
 
 // In-memory storage
 const gameRooms = new Map();
@@ -82,7 +392,9 @@ io.on("connection", (socket) => {
     try {
       const { username, room_code } = data;
 
-      console.log(`📝 Creating room request from ${username}, code: ${room_code}`);
+      console.log(
+        `📝 Creating room request from ${username}, code: ${room_code}`
+      );
 
       if (!username) {
         socket.emit("error", { message: "Username is required" });
@@ -93,10 +405,12 @@ io.on("connection", (socket) => {
       let roomCode;
       if (room_code && room_code.trim()) {
         roomCode = room_code.toUpperCase().trim();
-        
+
         // Check if room already exists
         if (gameRooms.has(roomCode)) {
-          socket.emit("error", { message: `Room ${roomCode} already exists. Try a different code.` });
+          socket.emit("error", {
+            message: `Room ${roomCode} already exists. Try a different code.`,
+          });
           return;
         }
       } else {
@@ -146,7 +460,6 @@ io.on("connection", (socket) => {
         players: room.players,
         message: `Room ${roomCode} created successfully! Share this code with friends: ${roomCode}`,
       });
-
     } catch (error) {
       console.error("Error creating room:", error);
       socket.emit("error", { message: "Failed to create room" });
@@ -159,40 +472,61 @@ io.on("connection", (socket) => {
       const { room_code, username } = data;
       const roomCode = room_code.toUpperCase().trim();
 
-      console.log(`🔍 Attempting to join room: ${roomCode}, Username: ${username}`);
-      
+      console.log(
+        `🔍 Attempting to join room: ${roomCode}, Username: ${username}`
+      );
+
       // Debug: Log all rooms
-      console.log(`📊 Available rooms:`, Array.from(gameRooms.entries()).map(([code, room]) => ({
-        code,
-        playerCount: room.players.length,
-        players: room.players.map(p => p.username),
-        gameStarted: room.gameStarted
-      })));
+      console.log(
+        `📊 Available rooms:`,
+        Array.from(gameRooms.entries()).map(([code, room]) => ({
+          code,
+          playerCount: room.players.length,
+          players: room.players.map((p) => p.username),
+          gameStarted: room.gameStarted,
+        }))
+      );
 
       if (!roomCode || !username) {
-        socket.emit("error", { message: "Room code and username are required" });
+        socket.emit("error", {
+          message: "Room code and username are required",
+        });
         return;
       }
 
       const room = gameRooms.get(roomCode);
 
       if (!room) {
-        console.log(`❌ Room ${roomCode} not found. Available rooms: ${Array.from(gameRooms.keys())}`);
-        socket.emit("error", { 
-          message: `Room ${roomCode} not found. Make sure the code is correct or ask the host to share it again.` 
+        console.log(
+          `❌ Room ${roomCode} not found. Available rooms: ${Array.from(
+            gameRooms.keys()
+          )}`
+        );
+        socket.emit("error", {
+          message: `Room ${roomCode} not found. Make sure the code is correct or ask the host to share it again.`,
         });
         return;
       }
 
-      console.log(`✅ Room ${roomCode} found, players: ${room.players.map(p => p.username)}`);
+      console.log(
+        `✅ Room ${roomCode} found, players: ${room.players.map(
+          (p) => p.username
+        )}`
+      );
 
       if (room.players.length >= MAX_PLAYERS) {
         socket.emit("error", { message: "Room is full (max 8 players)" });
         return;
       }
 
-      if (room.players.some(p => p.username.toLowerCase() === username.toLowerCase())) {
-        socket.emit("error", { message: "Username already taken in this room" });
+      if (
+        room.players.some(
+          (p) => p.username.toLowerCase() === username.toLowerCase()
+        )
+      ) {
+        socket.emit("error", {
+          message: "Username already taken in this room",
+        });
         return;
       }
 
@@ -223,8 +557,15 @@ io.on("connection", (socket) => {
         currentRound: room.currentRound,
         currentWord: room.currentWord,
         currentDrawer: room.currentDrawer,
-        timeLeft: room.roundTimer ? Math.floor((room.roundStartTime + (ROUND_TIME * 1000) - Date.now()) / 1000) : 0,
-        scores: room.players.map(p => ({ username: p.username, score: p.score })),
+        timeLeft: room.roundTimer
+          ? Math.floor(
+              (room.roundStartTime + ROUND_TIME * 1000 - Date.now()) / 1000
+            )
+          : 0,
+        scores: room.players.map((p) => ({
+          username: p.username,
+          score: p.score,
+        })),
       };
 
       // Notify new player
@@ -241,25 +582,34 @@ io.on("connection", (socket) => {
         socket.emit("game_state_update", {
           gameStarted: true,
           currentRound: room.currentRound,
-          drawer: room.players.find(p => p.id === room.currentDrawer)?.username || 'Unknown',
+          drawer:
+            room.players.find((p) => p.id === room.currentDrawer)?.username ||
+            "Unknown",
           drawerSid: room.currentDrawer,
-          word: socket.id === room.currentDrawer ? room.currentWord : "_".repeat(room.currentWord?.length || 0),
-          timeLeft: Math.max(0, ROUND_TIME - Math.floor((Date.now() - room.roundStartTime) / 1000)),
+          word:
+            socket.id === room.currentDrawer
+              ? room.currentWord
+              : "_".repeat(room.currentWord?.length || 0),
+          timeLeft: Math.max(
+            0,
+            ROUND_TIME - Math.floor((Date.now() - room.roundStartTime) / 1000)
+          ),
         });
-        
+
         // Send current canvas state
         if (room.strokes.length > 0) {
           setTimeout(() => {
-            room.strokes.forEach(stroke => {
+            room.strokes.forEach((stroke) => {
               socket.emit("stroke_drawn", stroke);
             });
           }, 1000);
         }
       }
-
     } catch (error) {
       console.error("Error joining room:", error);
-      socket.emit("error", { message: "Failed to join room. Please try again." });
+      socket.emit("error", {
+        message: "Failed to join room. Please try again.",
+      });
     }
   });
 
@@ -275,28 +625,33 @@ io.on("connection", (socket) => {
         return;
       }
 
-      const player = room.players.find(p => p.id === socket.id);
+      const player = room.players.find((p) => p.id === socket.id);
       if (!player?.isHost) {
         socket.emit("error", { message: "Only the host can start the game" });
         return;
       }
 
       if (room.players.length < MIN_PLAYERS) {
-        socket.emit("error", { message: `Need at least ${MIN_PLAYERS} players to start` });
+        socket.emit("error", {
+          message: `Need at least ${MIN_PLAYERS} players to start`,
+        });
         return;
       }
 
       room.gameStarted = true;
       room.currentRound = 1;
       room.currentDrawer = room.players[0].id;
-      room.currentWord = WORD_BANK[Math.floor(Math.random() * WORD_BANK.length)];
+      room.currentWord =
+        WORD_BANK[Math.floor(Math.random() * WORD_BANK.length)];
       room.guessedPlayers = [];
       room.strokes = [];
 
       // Shuffle players for drawing order
       room.players = room.players.sort(() => Math.random() - 0.5);
 
-      console.log(`🎯 Game started in room ${roomCode}, word: ${room.currentWord}`);
+      console.log(
+        `🎯 Game started in room ${roomCode}, word: ${room.currentWord}`
+      );
 
       // Notify all players
       io.to(roomCode).emit("game_started", {
@@ -307,7 +662,6 @@ io.on("connection", (socket) => {
 
       // Start first round
       setTimeout(() => startNewRound(roomCode), 2000);
-
     } catch (error) {
       console.error("Error starting game:", error);
       socket.emit("error", { message: "Failed to start game" });
@@ -333,7 +687,6 @@ io.on("connection", (socket) => {
 
       // Broadcast to all other players
       socket.to(roomCode).emit("stroke_drawn", strokeData);
-
     } catch (error) {
       console.error("Error drawing stroke:", error);
     }
@@ -359,11 +712,14 @@ io.on("connection", (socket) => {
       const room = gameRooms.get(roomCode);
       if (!room || !room.currentWord) return;
 
-      const player = room.players.find(p => p.id === socket.id);
+      const player = room.players.find((p) => p.id === socket.id);
       if (!player || socket.id === room.currentDrawer) return;
 
       if (room.guessedPlayers.includes(socket.id)) {
-        socket.emit("guess_result", { correct: false, message: "You already guessed correctly!" });
+        socket.emit("guess_result", {
+          correct: false,
+          message: "You already guessed correctly!",
+        });
         return;
       }
 
@@ -386,7 +742,7 @@ io.on("connection", (socket) => {
         player.score += points;
 
         // Award drawer
-        const drawer = room.players.find(p => p.id === room.currentDrawer);
+        const drawer = room.players.find((p) => p.id === room.currentDrawer);
         if (drawer) {
           drawer.score += 25;
         }
@@ -414,7 +770,6 @@ io.on("connection", (socket) => {
           message: "Try again!",
         });
       }
-
     } catch (error) {
       console.error("Error processing guess:", error);
     }
@@ -428,7 +783,7 @@ io.on("connection", (socket) => {
     const room = gameRooms.get(roomCode);
     if (!room) return;
 
-    const player = room.players.find(p => p.id === socket.id);
+    const player = room.players.find((p) => p.id === socket.id);
     if (!player) return;
 
     io.to(roomCode).emit("chat_message", {
@@ -446,7 +801,7 @@ io.on("connection", (socket) => {
     if (playerData) {
       const room = gameRooms.get(playerData.roomCode);
       if (room) {
-        const playerIndex = room.players.findIndex(p => p.id === socket.id);
+        const playerIndex = room.players.findIndex((p) => p.id === socket.id);
         if (playerIndex !== -1) {
           const player = room.players[playerIndex];
           room.players.splice(playerIndex, 1);
@@ -489,7 +844,7 @@ function startNewRound(roomCode) {
   if (!room || !room.gameStarted) return;
 
   // Find next drawer
-  let drawerIndex = room.players.findIndex(p => p.id === room.currentDrawer);
+  let drawerIndex = room.players.findIndex((p) => p.id === room.currentDrawer);
   drawerIndex = (drawerIndex + 1) % room.players.length;
 
   room.currentDrawer = room.players[drawerIndex].id;
@@ -498,7 +853,9 @@ function startNewRound(roomCode) {
   room.guessedPlayers = [];
   room.roundStartTime = Date.now();
 
-  console.log(`🎨 Round ${room.currentRound} - ${room.players[drawerIndex].username} drawing: ${room.currentWord}`);
+  console.log(
+    `🎨 Round ${room.currentRound} - ${room.players[drawerIndex].username} drawing: ${room.currentWord}`
+  );
 
   // Notify drawer with the word
   io.to(room.currentDrawer).emit("new_round", {
@@ -511,7 +868,7 @@ function startNewRound(roomCode) {
   });
 
   // Notify other players with blanks
-  room.players.forEach(player => {
+  room.players.forEach((player) => {
     if (player.id !== room.currentDrawer) {
       io.to(player.id).emit("new_round", {
         round: room.currentRound,
@@ -604,16 +961,16 @@ app.get("/api/rooms/list", (req, res) => {
     roomsList.push({
       code,
       playerCount: room.players.length,
-      players: room.players.map(p => p.username),
+      players: room.players.map((p) => p.username),
       gameStarted: room.gameStarted,
       createdAt: new Date().toISOString(),
     });
   }
 
-  res.json({ 
+  res.json({
     success: true,
-    rooms: roomsList, 
-    total: roomsList.length 
+    rooms: roomsList,
+    total: roomsList.length,
   });
 });
 
@@ -621,14 +978,14 @@ app.get("/api/rooms/list", (req, res) => {
 app.get("/api/rooms/:roomCode/exists", (req, res) => {
   const roomCode = req.params.roomCode.toUpperCase();
   const room = gameRooms.get(roomCode);
-  
+
   res.json({
     exists: !!room,
     roomCode,
     playerCount: room ? room.players.length : 0,
     gameStarted: room ? room.gameStarted : false,
-    players: room ? room.players.map(p => p.username) : [],
-    maxPlayers: MAX_PLAYERS
+    players: room ? room.players.map((p) => p.username) : [],
+    maxPlayers: MAX_PLAYERS,
   });
 });
 

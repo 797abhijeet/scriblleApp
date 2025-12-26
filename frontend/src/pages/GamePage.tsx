@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { io, Socket } from 'socket.io-client'
 import Canvas from '../components/Canvas'
-import '../styles/GamePage.css'
+
 
 interface Player {
   id: string
@@ -53,15 +53,15 @@ export default function GamePage() {
   const [drawerName, setDrawerName] = useState('')
   const [wordMask, setWordMask] = useState('')
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting')
-  
+
   const canvasRef = useRef<any>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const guessInputRef = useRef<HTMLInputElement>(null)
 
   // Use Render URL for production, localhost for development
-  const backendUrl = window.location.hostname === 'localhost' 
-    ? 'http://localhost:8001' 
+  const backendUrl = window.location.hostname === 'localhost'
+    ? 'http://localhost:8001'
     : 'https://scriblleapp.onrender.com'
 
   useEffect(() => {
@@ -86,7 +86,7 @@ export default function GamePage() {
       console.log('✅ Connected to server with ID:', newSocket.id)
       setConnectionStatus('connected')
       addSystemMessage('Connected to game server')
-      
+
       if (isHost) {
         console.log('🎯 Creating room as host...')
         newSocket.emit('create_room', {
@@ -120,7 +120,7 @@ export default function GamePage() {
       console.log('🔁 Reconnected after', attemptNumber, 'attempts')
       setConnectionStatus('connected')
       addSystemMessage('Reconnected to server')
-      
+
       // Re-join room after reconnection
       if (gameStarted) {
         newSocket.emit('join_room', {
@@ -187,17 +187,17 @@ export default function GamePage() {
       setCurrentWord(data.word)
       setWordMask(data.word)
       setTimeLeft(data.roundTime || 60)
-      
+
       // Clear canvas
       if (canvasRef.current) {
         canvasRef.current.clear()
       }
-      
+
       // Clear timer
       if (timerRef.current) {
         clearInterval(timerRef.current)
       }
-      
+
       // Start countdown timer
       timerRef.current = setInterval(() => {
         setTimeLeft((prev) => {
@@ -210,7 +210,7 @@ export default function GamePage() {
           return prev - 1
         })
       }, 1000)
-      
+
       if (data.drawerSid === newSocket.id) {
         addSystemMessage(`🎨 Your turn to draw: "${data.word}"`)
       } else {
@@ -242,8 +242,8 @@ export default function GamePage() {
       console.log('🎉 Correct guess:', data)
       addSystemMessage(`🎉 ${data.player} guessed correctly! +${data.points} points`, 'correct')
       // Update scores
-      setPlayers(prev => prev.map(player => 
-        player.username === data.player 
+      setPlayers(prev => prev.map(player =>
+        player.username === data.player
           ? { ...player, score: player.score + data.points }
           : player
       ))
@@ -265,7 +265,7 @@ export default function GamePage() {
       console.log('🏁 Round ended:', data)
       addSystemMessage(`Round ended! The word was: "${data.word}"`)
       addSystemMessage(`Scoreboard: ${data.players.map((p: any) => `${p.username}: ${p.score}`).join(', ')}`)
-      
+
       if (timerRef.current) {
         clearInterval(timerRef.current)
         timerRef.current = null
@@ -277,7 +277,7 @@ export default function GamePage() {
       setGameStarted(false)
       const winner = data.winner || data.players[0]
       addSystemMessage(`🏆 Game Over! Winner: ${winner.username} with ${winner.score} points!`)
-      
+
       if (timerRef.current) {
         clearInterval(timerRef.current)
         timerRef.current = null
@@ -363,7 +363,7 @@ export default function GamePage() {
 
     addMessage(username, guessInput, 'guess')
     setGuessInput('')
-    
+
     // Refocus input
     if (guessInputRef.current) {
       guessInputRef.current.focus()
@@ -434,45 +434,59 @@ export default function GamePage() {
     return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
-  // Get player list sorted by score
+  // ... Continue from where we left off in GamePage.tsx
+
   const sortedPlayers = [...players].sort((a, b) => b.score - a.score)
 
   return (
-    <div className="game-container">
+    <div className="flex flex-col h-screen bg-gradient-to-br from-[#667eea] to-[#764ba2] text-white">
       {/* Header */}
-      <div className="game-header">
-        <div className="header-left">
-          <button onClick={handleLeaveRoom} className="icon-button back-button">
+      <div className="flex justify-between items-center px-6 py-4 bg-black/30 backdrop-blur-lg border-b-2 border-white/10">
+        <div className="flex items-center gap-5">
+          <button
+            onClick={handleLeaveRoom}
+            className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg cursor-pointer border border-white/20 transition-all duration-300"
+          >
             ← Leave
           </button>
-          <div className="header-info">
-            <div className="room-code-display">
-              <span className="room-label">Room:</span>
-              <span className="room-code" onClick={handleCopyRoomCode} title="Click to copy">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-3">
+              <span className="opacity-80">Room:</span>
+              <span
+                className="text-lg font-bold bg-white/10 px-3 py-1 rounded cursor-pointer transition-all duration-300 hover:bg-white/20 hover:scale-105"
+                onClick={handleCopyRoomCode}
+                title="Click to copy"
+              >
                 {roomCode}
               </span>
-              <div className="connection-status">
-                <div className={`status-dot ${connectionStatus}`}></div>
-                <span>{connectionStatus}</span>
+              <div className="flex items-center gap-1">
+                <div className={`w-2 h-2 rounded-full ${connectionStatus === 'connected' ? 'bg-green-500 shadow-[0_0_10px_#4CAF50]' : connectionStatus === 'connecting' ? 'bg-yellow-500 shadow-[0_0_10px_#FFC107] animate-pulse' : 'bg-red-500 shadow-[0_0_10px_#f44336]'}`}></div>
+                <span className="text-sm">{connectionStatus}</span>
               </div>
             </div>
             {gameStarted && (
-              <div className="round-timer">
-                <span className="round-label">Round {currentRound}</span>
-                <span className="timer">{formatTime(timeLeft)}</span>
+              <div className="flex items-center gap-3">
+                <span className="text-sm opacity-80">Round {currentRound}</span>
+                <span className="text-base font-bold bg-white/15 px-2.5 py-0.5 rounded">{formatTime(timeLeft)}</span>
               </div>
             )}
           </div>
         </div>
-        
-        <div className="header-right">
+
+        <div className="flex gap-3">
           {!gameStarted && isHost && players.length >= 2 && (
-            <button onClick={handleStartGame} className="start-game-button">
+            <button
+              onClick={handleStartGame}
+              className="bg-gradient-to-br from-green-500 to-green-700 hover:shadow-[0_5px_15px_rgba(76,175,80,0.4)] text-white px-5 py-2.5 rounded-lg font-bold cursor-pointer transition-all duration-300 hover:-translate-y-0.5"
+            >
               🎮 Start Game
             </button>
           )}
           {gameStarted && isDrawer && (
-            <button onClick={handleClearCanvas} className="clear-canvas-button">
+            <button
+              onClick={handleClearCanvas}
+              className="bg-gradient-to-br from-red-500 to-red-700 hover:shadow-[0_5px_15px_rgba(244,67,54,0.4)] text-white px-5 py-2.5 rounded-lg font-bold cursor-pointer transition-all duration-300 hover:-translate-y-0.5"
+            >
               🗑️ Clear Canvas
             </button>
           )}
@@ -480,40 +494,40 @@ export default function GamePage() {
       </div>
 
       {/* Main Content */}
-      <div className="main-content">
+      <div className="flex flex-1 p-5 gap-5 overflow-hidden">
         {/* Left Panel - Players */}
-        <div className="players-panel">
-          <div className="panel-header">
-            <h3>👥 Players ({players.length})</h3>
+        <div className="w-72 bg-black/30 backdrop-blur-lg rounded-2xl p-5 flex flex-col">
+          <div className="mb-5 pb-4 border-b border-white/10">
+            <h3 className="text-xl m-0">👥 Players ({players.length})</h3>
           </div>
-          <div className="players-list">
+          <div className="flex-1 overflow-y-auto flex flex-col gap-2.5">
             {sortedPlayers.map((player) => (
-              <div 
-                key={player.id} 
-                className={`player-card ${player.isHost ? 'host' : ''} ${gameStarted && player.username === drawerName ? 'drawer' : ''}`}
+              <div
+                key={player.id}
+                className={`flex items-center gap-3 px-3 py-3 bg-white/10 rounded-xl transition-all duration-300 hover:bg-white/15 hover:translate-x-1.5 ${player.isHost ? 'border-l-4 border-yellow-500' : ''} ${gameStarted && player.username === drawerName ? 'border-l-4 border-green-500' : ''}`}
               >
-                <div className="player-avatar">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] flex items-center justify-center font-bold text-lg">
                   {player.username.charAt(0).toUpperCase()}
                 </div>
-                <div className="player-info">
-                  <div className="player-name">
+                <div className="flex-1">
+                  <div className="flex items-center gap-1 font-bold">
                     {player.username}
-                    {player.isHost && <span className="host-badge">👑</span>}
-                    {gameStarted && player.username === drawerName && <span className="drawer-badge">🎨</span>}
+                    {player.isHost && <span className="text-sm">👑</span>}
+                    {gameStarted && player.username === drawerName && <span className="text-sm">🎨</span>}
                   </div>
-                  <div className="player-score">{player.score} pts</div>
+                  <div className="text-sm opacity-80">{player.score} pts</div>
                 </div>
               </div>
             ))}
           </div>
           {!gameStarted && (
-            <div className="waiting-section">
-              <div className="waiting-icon">⏳</div>
-              <div className="waiting-text">
+            <div className="mt-auto text-center px-5 py-5 bg-white/5 rounded-xl">
+              <div className="text-3xl mb-2.5">⏳</div>
+              <div className="mb-2.5 opacity-90">
                 {isHost ? 'You are the host' : 'Waiting for host to start...'}
               </div>
               {isHost && players.length < 2 && (
-                <div className="min-players-warning">
+                <div className="text-sm text-yellow-400">
                   Need {2 - players.length} more player(s) to start
                 </div>
               )}
@@ -522,68 +536,74 @@ export default function GamePage() {
         </div>
 
         {/* Center Panel - Canvas */}
-        <div className="canvas-panel">
+        <div className="flex-1 bg-black/30 backdrop-blur-lg rounded-2xl p-5 flex flex-col">
           {gameStarted ? (
             <>
-              <div className="canvas-header">
+              <div className="mb-5 text-center">
                 {isDrawer ? (
-                  <div className="word-display drawer">
-                    <span className="label">🎨 Your word to draw:</span>
-                    <span className="word">{currentWord.toUpperCase()}</span>
+                  <div className="bg-gradient-to-br from-green-500/20 to-green-700/20 border-2 border-green-500 rounded-xl p-4 mb-2.5">
+                    <span className="block mb-1 text-sm opacity-80">🎨 Your word to draw:</span>
+                    <span className="text-2xl font-bold tracking-wider">{currentWord.toUpperCase()}</span>
                   </div>
                 ) : (
-                  <div className="word-display guesser">
-                    <span className="label">🔍 Guess the word:</span>
-                    <span className="word">
+                  <div className="bg-gradient-to-br from-blue-500/20 to-blue-700/20 border-2 border-blue-500 rounded-xl p-4 mb-2.5">
+                    <span className="block mb-1 text-sm opacity-80">🔍 Guess the word:</span>
+                    <span className="text-2xl font-bold tracking-wider">
                       {wordMask.split('').map((char, index) => (
                         char === '_' ? '_ ' : char + ' '
                       ))}
                     </span>
-                    <span className="hint">({currentWord.length} letters)</span>
+                    <span className="text-sm opacity-70 ml-2.5">({currentWord.length} letters)</span>
                   </div>
                 )}
-                <div className="drawer-info">
+                <div className="text-lg opacity-90">
                   🎨 Drawing: <strong>{drawerName}</strong>
                 </div>
               </div>
-              
-              <div className="canvas-wrapper">
+
+              <div className="flex-1 relative bg-white rounded-xl overflow-hidden">
                 <Canvas
                   ref={canvasRef}
                   canDraw={isDrawer && gameStarted}
                   onStrokeSent={handleStrokeSent}
                 />
                 {isDrawer && (
-                  <div className="drawing-instructions">
+                  <div className="absolute bottom-2.5 left-0 right-0 text-center text-gray-600 text-sm">
                     👆 Click and drag to draw • 🗑️ Clear button above
                   </div>
                 )}
               </div>
             </>
           ) : (
-            <div className="waiting-lobby">
-              <div className="lobby-icon">🎨</div>
-              <div className="lobby-title">Scribble Game</div>
-              <div className="lobby-subtitle">Waiting in Lobby</div>
-              <div className="lobby-room-code">
-                <div className="room-code-label">Room Code:</div>
-                <div className="room-code-large" onClick={handleCopyRoomCode}>
+            <div className="flex-1 flex flex-col items-center justify-center text-center">
+              <div className="text-7xl mb-5">🎨</div>
+              <div className="text-4xl font-bold mb-2.5">Scribble Game</div>
+              <div className="text-xl opacity-80 mb-7.5">Waiting in Lobby</div>
+              <div className="bg-white/10 p-5 rounded-2xl mb-7.5 min-w-80">
+                <div className="mb-2.5 opacity-80">Room Code:</div>
+                <div
+                  className="text-5xl font-bold tracking-wider mb-3.75 cursor-pointer transition-all duration-300 hover:scale-105"
+                  onClick={handleCopyRoomCode}
+                >
                   {roomCode}
                 </div>
-                <button className="copy-button" onClick={handleCopyRoomCode}>
+                <button
+                  className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg cursor-pointer transition-all duration-300"
+                  onClick={handleCopyRoomCode}
+                >
                   📋 Copy
                 </button>
               </div>
-              <div className="lobby-players">
-                <div className="players-count">{players.length} / 8 players</div>
-                <div className="players-list-small">
+              <div className="mb-5">
+                <div className="text-lg mb-2.5">{players.length} / 8 players</div>
+                <div className="opacity-80 max-w-100 break-words">
                   {players.map(player => player.username).join(', ')}
                 </div>
               </div>
               {isHost && (
-                <div className="host-instructions">
-                  <p>As host, you can start the game when ready!</p>
-                  <p>Share the room code with friends to join.</p>
+                <div className="bg-white/5 p-3.75 rounded-xl max-w-100">
+                  <p className="my-1.25 opacity-90">As host, you can start the game when ready!</p>
+                  <p className="my-1.25 opacity-90">Share the room code with friends to join.</p>
                 </div>
               )}
             </div>
@@ -591,39 +611,39 @@ export default function GamePage() {
         </div>
 
         {/* Right Panel - Chat */}
-        <div className="chat-panel">
-          <div className="panel-header">
-            <h3>💬 Chat</h3>
+        <div className="w-72 bg-black/30 backdrop-blur-lg rounded-2xl p-5 flex flex-col">
+          <div className="mb-5 pb-4 border-b border-white/10">
+            <h3 className="text-xl m-0">💬 Chat</h3>
           </div>
-          
-          <div className="messages-container">
+
+          <div className="flex-1 overflow-y-auto mb-5">
             {messages.length === 0 ? (
-              <div className="no-messages">
-                <div className="chat-icon">💭</div>
+              <div className="text-center px-5 py-10 opacity-50">
+                <div className="text-5xl mb-2.5">💭</div>
                 <p>No messages yet</p>
                 <p>Start chatting!</p>
               </div>
             ) : (
-              <div className="messages-list">
+              <div className="flex flex-col gap-2.5">
                 {messages.map((msg, index) => (
                   <div
                     key={index}
-                    className={`message-item ${msg.type} ${msg.username === username ? 'own' : ''}`}
+                    className={`p-2.5 rounded-xl ${msg.type === 'system' ? 'bg-blue-500/10 border-l-4 border-blue-500' : msg.type === 'correct' ? 'bg-green-500/10 border-l-4 border-green-500' : msg.username === username ? 'bg-purple-500/10 border-l-4 border-purple-600' : 'bg-white/5'}`}
                   >
                     {msg.type === 'system' || msg.type === 'correct' ? (
-                      <div className="system-message">
-                        <span className={`message-content ${msg.type}`}>
+                      <div className="text-center">
+                        <span className={`opacity-90 ${msg.type === 'correct' ? 'text-green-500 font-bold' : ''}`}>
                           {msg.type === 'correct' ? '🎉 ' : '📢 '}{msg.message}
                         </span>
                       </div>
                     ) : (
-                      <div className="user-message">
-                        <span className="message-username">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold opacity-90">
                           {msg.username}
                           {msg.username === username && ' (You)'}:
                         </span>
-                        <span className="message-content">{msg.message}</span>
-                        {msg.type === 'guess' && <span className="guess-badge">🎯</span>}
+                        <span className="opacity-90">{msg.message}</span>
+                        {msg.type === 'guess' && <span className="text-sm opacity-70">🎯</span>}
                       </div>
                     )}
                   </div>
@@ -632,16 +652,16 @@ export default function GamePage() {
               </div>
             )}
           </div>
-          
-          <div className="chat-input-container">
+
+          <div className="mt-auto">
             <form onSubmit={gameStarted && !isDrawer ? handleSendGuess : handleSendMessage}>
               <input
                 ref={guessInputRef}
                 type="text"
-                className="chat-input"
+                className="w-full px-3 py-3 bg-white/10 border border-white/20 rounded-lg text-white mb-1.25 placeholder:text-white/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder={
-                  gameStarted 
-                    ? (isDrawer ? "You're drawing (chat disabled)" : "Type your guess...") 
+                  gameStarted
+                    ? (isDrawer ? "You're drawing (chat disabled)" : "Type your guess...")
                     : "Type a message..."
                 }
                 value={guessInput}
@@ -650,26 +670,26 @@ export default function GamePage() {
                 disabled={gameStarted && isDrawer}
                 maxLength={50}
               />
-              <button 
-                type="submit" 
-                className="send-button"
+              <button
+                type="submit"
+                className="w-full px-3 py-3 bg-gradient-to-br from-[#667eea] to-[#764ba2] text-white rounded-lg font-bold cursor-pointer transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={!guessInput.trim() || (gameStarted && isDrawer)}
               >
                 {gameStarted && !isDrawer ? '🎯 Guess' : '📤 Send'}
               </button>
             </form>
-            <div className="input-hint">
-              {gameStarted && !isDrawer 
-                ? 'Press Enter to submit guess' 
+            <div className="text-center text-sm opacity-60 mt-1.25">
+              {gameStarted && !isDrawer
+                ? 'Press Enter to submit guess'
                 : 'Press Enter to send message'}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Footer Status */}
-      <div className="game-footer">
-        <div className="status-info">
+      {/* Footer */}
+      <div className="px-6 py-4 bg-black/30 backdrop-blur-lg border-t-2 border-white/10 flex justify-between items-center">
+        <div className="opacity-90">
           {gameStarted ? (
             <>
               <span>🎮 Game in progress • </span>
@@ -680,9 +700,9 @@ export default function GamePage() {
             <span>⏳ Waiting in lobby • {players.length} player(s) connected</span>
           )}
         </div>
-        <div className="user-info">
-          <span className="user-badge">{username}</span>
-          {isHost && <span className="host-badge">Host</span>}
+        <div className="flex gap-2.5">
+          <span className="bg-white/10 px-3 py-1 rounded-full text-sm">{username}</span>
+          {isHost && <span className="bg-gradient-to-br from-yellow-500 to-yellow-600 text-gray-800 px-3 py-1 rounded-full text-sm font-bold">Host</span>}
         </div>
       </div>
     </div>

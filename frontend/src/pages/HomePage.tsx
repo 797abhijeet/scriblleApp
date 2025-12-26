@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { io, Socket } from 'socket.io-client'
-import '../styles/HomePage.css'
 
 export default function HomePage() {
   const [username, setUsername] = useState('')
@@ -12,13 +11,11 @@ export default function HomePage() {
   const [socket, setSocket] = useState<Socket | null>(null)
   const navigate = useNavigate()
 
-
   const backendUrl = window.location.hostname === "localhost"
     ? "http://localhost:8001"
-    : "https://scriblleapp.onrender.com";
+    : "https://scriblleapp.onrender.com"
 
   useEffect(() => {
-    // Request location permission on mount
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -51,54 +48,52 @@ export default function HomePage() {
     const code = generateRoomCode()
     navigate(`/game?username=${username}&roomCode=${code}&isHost=true`)
   }
+
   const handleJoinRoom = () => {
     if (!username.trim()) {
-      alert('Please enter a username');
-      return;
+      alert('Please enter a username')
+      return
     }
     if (!roomCode.trim()) {
-      alert('Please enter a room code');
-      return;
+      alert('Please enter a room code')
+      return
     }
 
-    console.log(`Attempting to join room: ${roomCode.toUpperCase()} as ${username}`);
-
-    // Connect to Socket.IO
+    console.log(`Attempting to join room: ${roomCode.toUpperCase()} as ${username}`)
     const newSocket = io(backendUrl, {
       withCredentials: true,
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: 5,
-    });
+    })
 
     newSocket.on('connect', () => {
-      console.log('Connected to server for joining room');
-
+      console.log('Connected to server for joining room')
       newSocket.emit('join_room', {
         room_code: roomCode.toUpperCase(),
         username: username
-      });
-    });
+      })
+    })
 
     newSocket.on('room_joined', (data) => {
-      console.log('Room joined successfully:', data);
-      newSocket.disconnect(); // Disconnect this temporary socket
-      navigate(`/game?username=${username}&roomCode=${roomCode.toUpperCase()}&isHost=false`);
-    });
+      console.log('Room joined successfully:', data)
+      newSocket.disconnect()
+      navigate(`/game?username=${username}&roomCode=${roomCode.toUpperCase()}&isHost=false`)
+    })
 
     newSocket.on('room_players_update', (data) => {
-      console.log('Room players updated:', data);
-    });
+      console.log('Room players updated:', data)
+    })
 
     newSocket.on('error', (data) => {
-      console.error('Error joining room:', data);
-      alert(data.message);
-      newSocket.disconnect();
-      setSocket(null);
-    });
+      console.error('Error joining room:', data)
+      alert(data.message)
+      newSocket.disconnect()
+      setSocket(null)
+    })
 
-    setSocket(newSocket);
-  };
+    setSocket(newSocket)
+  }
 
   const handleFindNearby = () => {
     if (!username.trim()) {
@@ -112,7 +107,6 @@ export default function HomePage() {
     }
 
     setSearchingNearby(true)
-
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const userLocation = {
@@ -121,17 +115,13 @@ export default function HomePage() {
         }
         setLocation(userLocation)
 
-
-
-        // Update the Socket.IO connection:
         const newSocket = io(backendUrl, {
           withCredentials: true,
           transports: ['websocket', 'polling']
-        });
+        })
 
         newSocket.on('connect', () => {
           console.log('Connected to server for nearby search')
-
           newSocket.emit('find_nearby_match', {
             lat: userLocation.lat,
             lng: userLocation.lng,
@@ -146,11 +136,9 @@ export default function HomePage() {
         newSocket.on('match_found', (data) => {
           console.log('Match found!', data)
           setSearchingNearby(false)
-
           const confirmed = window.confirm(
             `Match found with ${data.matchedWith} (${data.distance}km away). Join game?`
           )
-
           if (confirmed) {
             newSocket.disconnect()
             navigate(`/game?username=${username}&roomCode=${data.roomCode}&isHost=false&matchType=nearby`)
@@ -184,20 +172,25 @@ export default function HomePage() {
 
   if (searchingNearby) {
     return (
-      <div className="home-container">
-        <div className="content">
-          <div className="searching-container">
-            <div className="icon">📍</div>
-            <div className="loader"></div>
-            <h2 className="searching-text">Finding Nearby Players...</h2>
-            <p className="searching-subtext">Searching within 50km radius</p>
+      <div className="w-full min-h-screen bg-gradient-to-br from-purple-600 to-blue-500 flex items-center justify-center p-5 relative overflow-hidden">
+        <div className="absolute w-[600px] h-[600px] bg-white rounded-full opacity-10 top-[-200px] right-[-200px] animate-float"></div>
+        <div className="absolute w-[400px] h-[400px] bg-white rounded-full opacity-10 bottom-[-100px] left-[-100px] animate-float animation-delay-5000"></div>
+        
+        <div className="max-w-[480px] w-full relative z-10 animate-slideUp">
+          <div className="text-center px-5 py-16">
+            <div className="text-6xl mb-5">📍</div>
+            <div className="w-16 h-16 border-6 border-white/30 border-t-white rounded-full animate-spin mx-auto my-8 shadow-lg"></div>
+            <h2 className="text-3xl font-bold text-white mb-3 text-shadow-lg">Finding Nearby Players...</h2>
+            <p className="text-lg text-white/90 mb-5 font-medium">Searching within 50km radius</p>
             {location && (
-              <p className="location-text">
+              <p className="text-sm text-white/80 mb-10 font-medium">
                 📍 Your location: {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
               </p>
             )}
-
-            <button className="cancel-button" onClick={handleCancelSearch}>
+            <button 
+              className="bg-red-500/95 hover:bg-red-600 text-white px-9 py-4 rounded-2xl text-lg font-semibold cursor-pointer transition-all duration-300 shadow-xl backdrop-blur-sm hover:-translate-y-1"
+              onClick={handleCancelSearch}
+            >
               Cancel Search
             </button>
           </div>
@@ -208,39 +201,51 @@ export default function HomePage() {
 
   if (mode === 'menu') {
     return (
-      <div className="home-container">
-        <div className="content">
-          <div className="header">
-            <div className="icon">🎨</div>
-            <h1 className="title">Scribble</h1>
-            <p className="subtitle">Draw, Guess & Have Fun!</p>
+      <div className="w-full min-h-screen bg-gradient-to-br from-purple-600 to-blue-500 flex items-center justify-center p-5 relative overflow-hidden">
+        <div className="absolute w-[600px] h-[600px] bg-white rounded-full opacity-10 top-[-200px] right-[-200px] animate-float"></div>
+        <div className="absolute w-[400px] h-[400px] bg-white rounded-full opacity-10 bottom-[-100px] left-[-100px] animate-float animation-delay-5000"></div>
+        
+        <div className="max-w-[480px] w-full relative z-10 animate-slideUp">
+          <div className="text-center mb-12 animate-fadeIn animation-delay-200">
+            <div className="text-8xl mb-5 inline-block animate-bounce drop-shadow-xl">🎨</div>
+            <h1 className="text-6xl font-black bg-gradient-to-br from-white to-blue-50 bg-clip-text text-transparent mb-4 tracking-tight text-shadow-lg">Scribble</h1>
+            <p className="text-xl text-white/90 mt-3 font-medium">Draw, Guess & Have Fun!</p>
           </div>
 
-          <div className="button-container">
-            <button className="primary-button" onClick={() => setMode('nearby')}>
-              <span className="button-icon">📍</span>
+          <div className="flex flex-col gap-4 animate-slideUp animation-delay-400">
+            <button 
+              className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white px-8 py-5 rounded-2xl text-lg font-semibold cursor-pointer flex items-center justify-center gap-3 shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden"
+              onClick={() => setMode('nearby')}
+            >
+              <span className="text-2xl drop-shadow">📍</span>
               Find Nearby Players
             </button>
 
-            <div className="divider">
-              <div className="divider-line"></div>
-              <span className="divider-text">OR</span>
-              <div className="divider-line"></div>
+            <div className="flex items-center my-2 opacity-70">
+              <div className="flex-1 h-px bg-white/30"></div>
+              <span className="mx-4 text-white/80 text-sm font-semibold tracking-wider">OR</span>
+              <div className="flex-1 h-px bg-white/30"></div>
             </div>
 
-            <button className="secondary-button" onClick={() => setMode('create')}>
-              <span className="button-icon">➕</span>
+            <button 
+              className="bg-white/95 hover:bg-white text-indigo-500 px-8 py-5 rounded-2xl text-lg font-semibold cursor-pointer flex items-center justify-center gap-3 backdrop-blur-sm border-2 border-white/30 shadow-lg hover:-translate-y-1 transition-all duration-300"
+              onClick={() => setMode('create')}
+            >
+              <span className="text-2xl drop-shadow">➕</span>
               Create Room
             </button>
 
-            <button className="secondary-button" onClick={() => setMode('join')}>
-              <span className="button-icon">🚪</span>
+            <button 
+              className="bg-white/95 hover:bg-white text-indigo-500 px-8 py-5 rounded-2xl text-lg font-semibold cursor-pointer flex items-center justify-center gap-3 backdrop-blur-sm border-2 border-white/30 shadow-lg hover:-translate-y-1 transition-all duration-300"
+              onClick={() => setMode('join')}
+            >
+              <span className="text-2xl drop-shadow">🚪</span>
               Join with Code
             </button>
           </div>
 
-          <div className="footer">
-            <p className="footer-text">Made with ❤️ for Scribble lovers</p>
+          <div className="text-center mt-12 animate-fadeIn animation-delay-600">
+            <p className="text-white/80 text-sm font-medium">Made with ❤️ for Scribble lovers</p>
           </div>
         </div>
       </div>
@@ -248,26 +253,32 @@ export default function HomePage() {
   }
 
   return (
-    <div className="home-container">
-      <div className="content">
-        <button className="back-button" onClick={() => setMode('menu')}>
-          ← Back
+    <div className="w-full min-h-screen bg-gradient-to-br from-purple-600 to-blue-500 flex items-center justify-center p-5 relative overflow-hidden">
+      <div className="absolute w-[600px] h-[600px] bg-white rounded-full opacity-10 top-[-200px] right-[-200px] animate-float"></div>
+      <div className="absolute w-[400px] h-[400px] bg-white rounded-full opacity-10 bottom-[-100px] left-[-100px] animate-float animation-delay-5000"></div>
+      
+      <div className="max-w-[480px] w-full relative z-10 animate-slideUp">
+        <button 
+          className="absolute top-4 left-4 w-12 h-12 rounded-full bg-white/95 border-none cursor-pointer backdrop-blur-sm shadow-lg text-2xl font-bold text-indigo-500 hover:scale-110 transition-all duration-300"
+          onClick={() => setMode('menu')}
+        >
+          ←
         </button>
 
-        <div className="form-header">
-          <div className="icon">
+        <div className="text-center mb-10 animate-fadeIn animation-delay-200">
+          <div className="text-8xl mb-5">
             {mode === 'create' ? '➕' : mode === 'nearby' ? '📍' : '🚪'}
           </div>
-          <h2 className="form-title">
+          <h2 className="text-5xl font-black bg-gradient-to-br from-white to-blue-50 bg-clip-text text-transparent mb-5 tracking-tight">
             {mode === 'create' ? 'Create Room' : mode === 'nearby' ? 'Find Nearby' : 'Join Room'}
           </h2>
         </div>
 
-        <div className="form">
-          <div className="input-container">
-            <span className="input-icon">👤</span>
+        <div className="flex flex-col gap-5 animate-slideUp animation-delay-400">
+          <div className="flex items-center bg-white/95 rounded-2xl px-5 py-2 border-2 border-white/30 gap-3 backdrop-blur-sm shadow-lg transition-all duration-300 focus-within:border-indigo-500/50 focus-within:bg-white focus-within:shadow-xl focus-within:-translate-y-1">
+            <span className="text-2xl opacity-60">👤</span>
             <input
-              className="input"
+              className="flex-1 text-lg py-4 border-none outline-none bg-transparent text-gray-800 font-medium placeholder:text-slate-400"
               type="text"
               placeholder="Enter your username"
               value={username}
@@ -277,10 +288,10 @@ export default function HomePage() {
           </div>
 
           {mode === 'join' && (
-            <div className="input-container">
-              <span className="input-icon">🔑</span>
+            <div className="flex items-center bg-white/95 rounded-2xl px-5 py-2 border-2 border-white/30 gap-3 backdrop-blur-sm shadow-lg transition-all duration-300 focus-within:border-indigo-500/50 focus-within:bg-white focus-within:shadow-xl focus-within:-translate-y-1">
+              <span className="text-2xl opacity-60">🔑</span>
               <input
-                className="input"
+                className="flex-1 text-lg py-4 border-none outline-none bg-transparent text-gray-800 font-medium placeholder:text-slate-400 uppercase"
                 type="text"
                 placeholder="Enter room code"
                 value={roomCode}
@@ -291,16 +302,16 @@ export default function HomePage() {
           )}
 
           {mode === 'nearby' && (
-            <div className="info-box">
-              <span className="info-icon">ℹ️</span>
-              <p className="info-text">
+            <div className="bg-blue-50/95 p-5 rounded-2xl flex gap-4 items-start backdrop-blur-sm border-2 border-blue-300/30 shadow-lg">
+              <span className="text-2xl">ℹ️</span>
+              <p className="flex-1 text-blue-900 text-sm leading-relaxed font-medium">
                 We'll find players near you (within 50km) who are also looking for a game!
               </p>
             </div>
           )}
 
           <button
-            className="primary-button"
+            className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white px-8 py-5 rounded-2xl text-lg font-semibold cursor-pointer flex items-center justify-center gap-3 shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden"
             onClick={
               mode === 'create'
                 ? handleCreateRoom

@@ -1,5 +1,4 @@
 import { forwardRef, useImperativeHandle, useRef, useState, useEffect } from 'react'
-import '../styles/Canvas.css'
 
 interface Stroke {
   points: { x: number; y: number }[]
@@ -122,7 +121,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ canDraw, onStrokeSent }, re
     setIsDrawing(false)
 
     if (currentStroke.length > 0 && canvasSizeRef.current.width > 0) {
-      // Normalize coordinates
       const normalizedPoints = currentStroke.map((point) => ({
         x: point.x / canvasSizeRef.current.width,
         y: point.y / canvasSizeRef.current.height,
@@ -141,7 +139,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(({ canDraw, onStrokeSent }, re
   return (
     <canvas
       ref={canvasRef}
-      className="drawing-canvas"
+      className="w-full h-full cursor-crosshair touch-none bg-gradient-to-br from-white to-gray-50 transition-all duration-300 hover:bg-white"
       onMouseDown={startDrawing}
       onMouseMove={draw}
       onMouseUp={stopDrawing}
